@@ -9,12 +9,7 @@
 
 name: Linux Qemu tests
 
-on:
-  pull_request:
-    branches:
-      - main
-      - ci_test
-      - maintenance/**
+on: [push]
 
 defaults:
   run:
