@@ -13,6 +13,7 @@ on:
   pull_request:
     branches:
       - main
+      - ci_test
       - maintenance/**
 
 defaults:
@@ -29,7 +30,7 @@ permissions:
 jobs:
   linux_qemu:
     # To enable this workflow on a fork, comment out:
-    if: github.repository == 'numpy/numpy'
+    if: github.repository == 'plctlab/numpy'
     runs-on: ubuntu-22.04
     continue-on-error: true
     strategy:
