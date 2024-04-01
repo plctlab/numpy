@@ -79,7 +79,7 @@ jobs:
               "riscv64/ubuntu:22.04",
               "-Dallow-noblas=true",
               "test_kind or test_multiarray or test_simd or test_umath or test_ufunc",
-              "QEMU_CPU=rv64,v=true,vext_spec=v1.0"
+              "-e QEMU_CPU=rv64,v=true,vext_spec=v1.0"
           ]
     env:
       TOOLCHAIN_NAME: ${{ matrix.BUILD_PROP[1] }}
