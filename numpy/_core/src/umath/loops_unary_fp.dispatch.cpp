@@ -99,137 +99,285 @@ NPY_FINLINE double c_sqrt_f64(double _a) {
 
 #if NPY_SIMD_F32
 
-/**begin repeat1
- * #kind     = rint,  floor, ceil, trunc, sqrt, absolute, square, reciprocal#
- * #intr     = rint,  floor, ceil, trunc, sqrt, abs,      square, recip#
- * #repl_0w1 = 0*7, 1#
- */
-/**begin repeat2
- * #STYPE  = CONTIG, NCONTIG, CONTIG,  NCONTIG#
- * #DTYPE  = CONTIG, CONTIG,  NCONTIG, NCONTIG#
- * #UNROLL = 4,      4,       2,       2#
- */
+const hn::ScalableTag<float> f32;
+const hn::ScalableTag<int32_t> s32;
+using vec_f32 = hn::Vec<decltype(f32)>;
+using vec_s32 = hn::Vec<decltype(s32)>;
+using opmask_t = hn::Mask<decltype(f32)>;
+
+vec_f32 square(vec_f32 a) {
+  return hn::Mul(a, a);
+}
+
+vec_f32 reciprocal(vec_f32 a) {
+  const vec_f32 ones  = hn::Set(f32, 1);
+  return hn::Div(ones, a);
+}
+
+NPY_FINLINE HWY_ATTR vec_f32
+GatherIndexN(const float* src, npy_intp ssrc, npy_intp len)
+{
+    float temp[hn::Lanes(f32)] = { 0.0f };
+    for (auto ii = 0; ii < std::min(len, (npy_intp)hn::Lanes(f32)); ++ii) {
+        temp[ii] = src[ii * ssrc];
+    }
+    return hn::LoadU(f32, temp);
+}
+
+NPY_FINLINE HWY_ATTR void
+ScatterIndexN(vec_f32 vec, float* dst, npy_intp sdst, npy_intp len)
+{
+    float temp[hn::Lanes(f32)];
+    hn::StoreU(vec, f32, temp);
+    for (auto ii = 0; ii < std::min(len, (npy_intp)hn::Lanes(f32)); ++ii) {
+        dst[ii * sdst] = temp[ii];
+    }
+}
+
 template <int STYPE, int DTYPE, int UNROLL, bool IS_RECIP, typename Func>
-static void simd_FLOAT_HELPER(const void* _src,
+static void HW_FLOAT_HELPER(const void* _src,
                               npy_intp ssrc,
                               void* _dst,
                               npy_intp sdst,
                               npy_intp len,
                               Func fn) {
-  const npyv_lanetype_f32* src = (const npyv_lanetype_f32*)_src;
-  npyv_lanetype_f32* dst = (npyv_lanetype_f32*)_dst;
+  const float* src = (const float*)_src;
+  float* dst = (float*)_dst;
 
-  const int vstep = npyv_nlanes_f32;
+  const int vstep = hn::Lanes(f32);
   const int wstep = vstep * UNROLL;
 
   // unrolled iterations
   for (; len >= wstep; len -= wstep, src += ssrc * wstep, dst += sdst * wstep) {
-    if (UNROLL > 0) {
-      npyv_f32 v_src0;
-      if (STYPE == CONTIG) {
-        v_src0 = npyv_load_f32(src + vstep * 0);
+    if constexpr (UNROLL > 0) {
+      vec_f32 v_src0;
+      if constexpr (STYPE == CONTIG) {
+        v_src0 = hn::LoadN(f32, src + vstep * 0, len);
       } else {
-        v_src0 = npyv_loadn_f32(src + ssrc * vstep * 0, ssrc);
+        v_src0 = GatherIndexN(src + ssrc * vstep * 0, ssrc, len);
       }
-      npyv_f32 v_unary0 = fn(v_src0);
+      vec_f32 v_unary0 = fn(v_src0);
 
-      if (DTYPE == CONTIG) {
-        npyv_store_f32(dst + vstep * 0, v_unary0);
+      if constexpr (DTYPE == CONTIG) {
+        hn::StoreN(v_unary0, f32, dst + vstep * 0, len);
       } else {
-        npyv_storen_f32(dst + sdst * vstep * 0, sdst, v_unary0);
-      }
-    }
-
-    if (UNROLL > 1) {
-      npyv_f32 v_src1;
-      if (STYPE == CONTIG) {
-        v_src1 = npyv_load_f32(src + vstep * 1);
-      } else {
-        v_src1 = npyv_loadn_f32(src + ssrc * vstep * 1, ssrc);
-      }
-      npyv_f32 v_unary1 = fn(v_src1);
-
-      if (DTYPE == CONTIG) {
-        npyv_store_f32(dst + vstep * 1, v_unary1);
-      } else {
-        npyv_storen_f32(dst + sdst * vstep * 1, sdst, v_unary1);
+        ScatterIndexN(v_unary0, dst + sdst * vstep * 0, sdst, len);
       }
     }
 
-    if (UNROLL > 2) {
-      npyv_f32 v_src2;
-      if (STYPE == CONTIG) {
-        v_src2 = npyv_load_f32(src + vstep * 2);
+    if constexpr (UNROLL > 1) {
+      vec_f32 v_src1;
+      if constexpr (STYPE == CONTIG) {
+        v_src1 = hn::LoadN(f32, src + vstep * 1, len);
       } else {
-        v_src2 = npyv_loadn_f32(src + ssrc * vstep * 2, ssrc);
+        v_src1 = GatherIndexN(src + ssrc * vstep * 1, ssrc, len);
       }
-      npyv_f32 v_unary2 = fn(v_src2);
+      vec_f32 v_unary1 = fn(v_src1);
 
-      if (DTYPE == CONTIG) {
-        npyv_store_f32(dst + vstep * 2, v_unary2);
+      if constexpr (DTYPE == CONTIG) {
+        hn::StoreN(v_unary1, f32, dst + vstep * 1, len);
       } else {
-        npyv_storen_f32(dst + sdst * vstep * 2, sdst, v_unary2);
+        ScatterIndexN(v_unary1, dst + sdst * vstep * 1, sdst, len);
       }
     }
 
-    if (UNROLL > 3) {
-      npyv_f32 v_src3;
-      if (STYPE == CONTIG) {
-        v_src3 = npyv_load_f32(src + vstep * 3);
+    if constexpr (UNROLL > 2) {
+      vec_f32 v_src2;
+      if constexpr (STYPE == CONTIG) {
+        v_src2 = hn::LoadN(f32, src + vstep * 2, len);
       } else {
-        v_src3 = npyv_loadn_f32(src + ssrc * vstep * 3, ssrc);
+        v_src2 = GatherIndexN(src + ssrc * vstep * 2, ssrc, len);
       }
-      npyv_f32 v_unary3 = fn(v_src3);
+      vec_f32 v_unary2 = fn(v_src2);
 
-      if (DTYPE == CONTIG) {
-        npyv_store_f32(dst + vstep * 3, v_unary3);
+      if constexpr (DTYPE == CONTIG) {
+        hn::StoreN(v_unary2, f32, dst + vstep * 1, len);
       } else {
-        npyv_storen_f32(dst + sdst * vstep * 3, sdst, v_unary3);
+        ScatterIndexN(v_unary2, dst + sdst * vstep * 2, sdst, len);
+      }
+    }
+
+    if constexpr (UNROLL > 3) {
+      vec_f32 v_src3;
+      if constexpr (STYPE == CONTIG) {
+        v_src3 = hn::LoadN(f32, src + vstep * 3, len);
+      } else {
+        v_src3 = GatherIndexN(src + ssrc * vstep * 3, ssrc, len);
+      }
+      vec_f32 v_unary3 = fn(v_src3);
+
+      if constexpr (DTYPE == CONTIG) {
+        hn::StoreN(v_unary3, f32, dst + vstep * 3, len);
+      } else {
+        ScatterIndexN(v_unary3, dst + sdst * vstep * 3, sdst, len);
       }
     }
   }
 
   // vector-sized iterations
   for (; len >= vstep; len -= vstep, src += ssrc * vstep, dst += sdst * vstep) {
-    npyv_f32 v_src0;
-    if (STYPE == CONTIG) {
-      v_src0 = npyv_load_f32(src);
+    vec_f32 v_src0;
+    if constexpr (STYPE == CONTIG) {
+      v_src0 = hn::LoadN(f32, src, len);
     } else {
-      v_src0 = npyv_loadn_f32(src, ssrc);
+      v_src0 = GatherIndexN(src, ssrc, len);
     }
-    npyv_f32 v_unary0 = fn(v_src0);
-    if (DTYPE == CONTIG) {
-      npyv_store_f32(dst, v_unary0);
+    vec_f32 v_unary0 = fn(v_src0);
+    if constexpr (DTYPE == CONTIG) {
+      hn::StoreN(v_unary0, f32, dst, len);
     } else {
-      npyv_storen_f32(dst, sdst, v_unary0);
+      ScatterIndexN(v_unary0, dst, sdst, len);
     }
   }
 
   // last partial iteration, if needed
   if (len > 0) {
-    npyv_f32 v_src0;
+    vec_f32 v_src0;
     if (STYPE == CONTIG) {
       if (IS_RECIP) {
-        v_src0 = npyv_load_till_f32(src, len, 1);
+        v_src0 = hn::LoadN(f32, src, len);
       } else {
-        v_src0 = npyv_load_tillz_f32(src, len);
+        v_src0 = hn::LoadN(f32, src, len);
       }
     } else {
       if (IS_RECIP) {
-        v_src0 = npyv_loadn_till_f32(src, ssrc, len, 1);
+        v_src0 = GatherIndexN(src, ssrc, len);
       } else {
-        v_src0 = npyv_loadn_tillz_f32(src, ssrc, len);
+        v_src0 = GatherIndexN(src, ssrc, len);
       }
     }
-    npyv_f32 v_unary0 = fn(v_src0);
+    vec_f32 v_unary0 = fn(v_src0);
     if (DTYPE == CONTIG) {
-      npyv_store_till_f32(dst, len, v_unary0);
+      hn::StoreN(v_unary0, f32, dst, len);
+      // npyv_store_till_f32(dst, len, v_unary0);
     } else {
-      npyv_storen_till_f32(dst, sdst, len, v_unary0);
+      hn::StoreN(v_unary0, f32, dst, len);
+      // npyv_storen_till_f32(dst, sdst, len, v_unary0);
     }
   }
 
   npyv_cleanup();
+}
+
+
+template <int STYPE, int DTYPE, int UNROLL, bool IS_RECIP, typename Func>
+static void simd_FLOAT_HELPER
+(const void *_src, npy_intp ssrc, void *_dst, npy_intp sdst, npy_intp len, Func fn)
+{
+    const npyv_lanetype_f32 *src = (const npyv_lanetype_f32*)_src;
+          npyv_lanetype_f32 *dst = (npyv_lanetype_f32*)_dst;
+
+    const int vstep = npyv_nlanes_f32;
+    const int wstep = vstep * UNROLL;
+
+    // unrolled iterations
+    for (; len >= wstep; len -= wstep, src += ssrc*wstep, dst += sdst*wstep) {
+        if(UNROLL > 0) {
+          npyv_f32 v_src0;
+          if (STYPE == CONTIG) {
+            v_src0 = npyv_load_f32(src + vstep * 0);
+          } else {
+            v_src0 = npyv_loadn_f32(src + ssrc * vstep * 0, ssrc);
+          }
+          npyv_f32 v_unary0 = fn(v_src0);
+
+          if (DTYPE == CONTIG) {
+            npyv_store_f32(dst + vstep * 0, v_unary0);
+          } else {
+            npyv_storen_f32(dst + sdst * vstep * 0, sdst, v_unary0);
+          }
+        }
+
+        if(UNROLL > 1) {
+          npyv_f32 v_src1;
+            if(STYPE == CONTIG) {
+                v_src1 = npyv_load_f32(src + vstep*1);
+            } else {
+                v_src1 = npyv_loadn_f32(src + ssrc*vstep*1, ssrc);
+            }
+            npyv_f32 v_unary1 = fn(v_src1);
+
+            if(DTYPE == CONTIG) {
+                npyv_store_f32(dst + vstep*1, v_unary1);
+            }else{
+                npyv_storen_f32(dst + sdst*vstep*1, sdst, v_unary1);
+            }
+        }
+
+        if(UNROLL > 2) {
+          npyv_f32 v_src2;
+            if(STYPE == CONTIG) {
+                v_src2 = npyv_load_f32(src + vstep*2);
+            } else {
+                v_src2 = npyv_loadn_f32(src + ssrc*vstep*2, ssrc);
+            }
+            npyv_f32 v_unary2 = fn(v_src2);
+
+            if(DTYPE == CONTIG) {
+                npyv_store_f32(dst + vstep*2, v_unary2);
+            }else{
+                npyv_storen_f32(dst + sdst*vstep*2, sdst, v_unary2);
+            }
+        }
+
+        if(UNROLL > 3) {
+          npyv_f32 v_src3;
+            if(STYPE == CONTIG) {
+                v_src3 = npyv_load_f32(src + vstep*3);
+            } else {
+                v_src3 = npyv_loadn_f32(src + ssrc*vstep*3, ssrc);
+            }
+            npyv_f32 v_unary3 = fn(v_src3);
+
+            if(DTYPE == CONTIG) {
+                npyv_store_f32(dst + vstep*3, v_unary3);
+            }else{
+                npyv_storen_f32(dst + sdst*vstep*3, sdst, v_unary3);
+            }
+        }
+    }
+
+    // vector-sized iterations
+    for (; len >= vstep; len -= vstep, src += ssrc*vstep, dst += sdst*vstep) {
+      npyv_f32 v_src0;
+      if (STYPE == CONTIG) {
+        v_src0 = npyv_load_f32(src);
+      } else {
+        v_src0 = npyv_loadn_f32(src, ssrc);
+      }
+      npyv_f32 v_unary0 = fn(v_src0);
+      if (DTYPE == CONTIG) {
+        npyv_store_f32(dst, v_unary0);
+      } else {
+        npyv_storen_f32(dst, sdst, v_unary0);
+      }
+    }
+
+    // last partial iteration, if needed
+    if (len > 0) {
+      npyv_f32 v_src0;
+      if (STYPE == CONTIG) {
+        if (IS_RECIP) {
+          v_src0 = npyv_load_till_f32(src, len, 1);
+        } else {
+          v_src0 = npyv_load_tillz_f32(src, len);
+        }
+      } else {
+        if (IS_RECIP) {
+          v_src0 = npyv_loadn_till_f32(src, ssrc, len, 1);
+        } else {
+          v_src0 = npyv_loadn_tillz_f32(src, ssrc, len);
+        }
+      }
+      npyv_f32 v_unary0 = fn(v_src0);
+      if (DTYPE == CONTIG) {
+        npyv_store_till_f32(dst, len, v_unary0);
+      } else {
+        npyv_storen_till_f32(dst, sdst, len, v_unary0);
+      }
+    }
+
+    npyv_cleanup();
 }
 
 #define SIMD_KERNERL(KIND, FUNC, IS_RECIP)                                     \
@@ -238,31 +386,61 @@ static void simd_FLOAT_HELPER(const void* _src,
                                                 npy_intp sdst, npy_intp len) { \
     auto fn = [](npyv_f32 src){return FUNC(src);};                             \
     simd_FLOAT_HELPER<CONTIG, CONTIG, 4, IS_RECIP>(_src, ssrc, _dst, sdst,     \
-                                                   len, fn);                   \
+                                                   len, fn);                 \
   }                                                                            \
   static void simd_FLOAT_##KIND##_NCONTIG_CONTIG(                              \
       const void* _src, npy_intp ssrc, void* _dst, npy_intp sdst,              \
       npy_intp len) {                                                          \
     auto fn = [](npyv_f32 src){return FUNC(src);};                             \
     simd_FLOAT_HELPER<NCONTIG, CONTIG, 4, IS_RECIP>(_src, ssrc, _dst, sdst,    \
-                                                    len, fn);                  \
+                                                    len, fn);                \
   }                                                                            \
   static void simd_FLOAT_##KIND##_CONTIG_NCONTIG(                              \
       const void* _src, npy_intp ssrc, void* _dst, npy_intp sdst,              \
       npy_intp len) {                                                          \
     auto fn = [](npyv_f32 src){return FUNC(src);};                             \
     simd_FLOAT_HELPER<CONTIG, NCONTIG, 2, IS_RECIP>(_src, ssrc, _dst, sdst,    \
-                                                    len, fn);                  \
+                                                    len, fn);                \
   }                                                                            \
   static void simd_FLOAT_##KIND##_NCONTIG_NCONTIG(                             \
       const void* _src, npy_intp ssrc, void* _dst, npy_intp sdst,              \
       npy_intp len) {                                                          \
     auto fn = [](npyv_f32 src){return FUNC(src);};                             \
     simd_FLOAT_HELPER<NCONTIG, NCONTIG, 2, IS_RECIP>(_src, ssrc, _dst, sdst,   \
+                                                     len, fn);               \
+  }
+
+#define HW_KERNERL(KIND, FUNC, IS_RECIP)                                     \
+  static void simd_FLOAT_##KIND##_CONTIG_CONTIG(const void* _src,              \
+                                                npy_intp ssrc, void* _dst,     \
+                                                npy_intp sdst, npy_intp len) { \
+    auto fn = [](vec_f32 src){return FUNC(src);};                             \
+    HW_FLOAT_HELPER<CONTIG, CONTIG, 4, IS_RECIP>(_src, ssrc, _dst, sdst,     \
+                                                   len, fn);                   \
+  }                                                                            \
+  static void simd_FLOAT_##KIND##_NCONTIG_CONTIG(                              \
+      const void* _src, npy_intp ssrc, void* _dst, npy_intp sdst,              \
+      npy_intp len) {                                                          \
+    auto fn = [](vec_f32 src){return FUNC(src);};                             \
+    HW_FLOAT_HELPER<NCONTIG, CONTIG, 4, IS_RECIP>(_src, ssrc, _dst, sdst,    \
+                                                    len, fn);                  \
+  }                                                                            \
+  static void simd_FLOAT_##KIND##_CONTIG_NCONTIG(                              \
+      const void* _src, npy_intp ssrc, void* _dst, npy_intp sdst,              \
+      npy_intp len) {                                                          \
+    auto fn = [](vec_f32 src){return FUNC(src);};                             \
+    HW_FLOAT_HELPER<CONTIG, NCONTIG, 2, IS_RECIP>(_src, ssrc, _dst, sdst,    \
+                                                    len, fn);                  \
+  }                                                                            \
+  static void simd_FLOAT_##KIND##_NCONTIG_NCONTIG(                             \
+      const void* _src, npy_intp ssrc, void* _dst, npy_intp sdst,              \
+      npy_intp len) {                                                          \
+    auto fn = [](vec_f32 src){return FUNC(src);};                             \
+    HW_FLOAT_HELPER<NCONTIG, NCONTIG, 2, IS_RECIP>(_src, ssrc, _dst, sdst,   \
                                                      len, fn);                 \
   }
 
-SIMD_KERNERL(rint, npyv_rint_f32, false)
+HW_KERNERL(rint, hn::Round, false)
 SIMD_KERNERL(floor, npyv_floor_f32, false)
 SIMD_KERNERL(ceil, npyv_ceil_f32, false)
 SIMD_KERNERL(trunc, npyv_trunc_f32, false)
