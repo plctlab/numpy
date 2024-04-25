@@ -44,28 +44,6 @@ namespace hn = hwy::HWY_NAMESPACE;
     } else if (IS_UNARY_CONT(input_array, output_array)) {                     \
       size_t full = size & -hn::Lanes(d);                                      \
       size_t remainder = size - full;                                          \
-      if (full > hn::Lanes(d) * 4) {                                           \
-        for (size_t i = 0; hn::Lanes(d) * 4 <= full - i;                       \
-             i += hn::Lanes(d) * 4) {                                          \
-          const auto in0 = hn::LoadU(d, input_array + i);                      \
-          auto x0 = FUNC(in0);                                                 \
-                                                                               \
-          const auto in1 = hn::LoadU(d, input_array + i + hn::Lanes(d) * 1);   \
-          auto x1 = FUNC(in1);                                                 \
-                                                                               \
-          const auto in2 = hn::LoadU(d, input_array + i + hn::Lanes(d) * 2);   \
-          auto x2 = FUNC(in2);                                                 \
-                                                                               \
-          const auto in3 = hn::LoadU(d, input_array + i + hn::Lanes(d) * 3);   \
-          auto x3 = FUNC(in3);                                                 \
-                                                                               \
-          hn::StoreU(x0, d, output_array + i);                                 \
-          hn::StoreU(x1, d, output_array + i + hn::Lanes(d) * 1);              \
-          hn::StoreU(x2, d, output_array + i + hn::Lanes(d) * 2);              \
-          hn::StoreU(x3, d, output_array + i + hn::Lanes(d) * 3);              \
-        }                                                                      \
-        full = full % (hn::Lanes(d) * 4);                                      \
-      }                                                                        \
       for (size_t i = 0; i < full; i += hn::Lanes(d)) {                        \
         const auto in = hn::LoadU(d, input_array + i);                         \
         auto x = FUNC(in);                                                     \
