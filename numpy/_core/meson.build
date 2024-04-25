@@ -105,7 +105,9 @@ if use_highway
   highway_lib = static_library('highway',
     [
       # required for hwy::Abort symbol
-      'src/highway/hwy/abort.cc'
+      'src/highway/hwy/abort.cc',
+      'src/highway/hwy/per_target.cc',
+      'src/highway/hwy/targets.cc'
     ],
     cpp_args: '-DTOOLCHAIN_MISS_ASM_HWCAP_H',
     include_directories: ['src/highway'],
@@ -1141,6 +1143,7 @@ src_umath = umath_gen_headers + [
   src_file.process('src/umath/matmul.c.src'),
   src_file.process('src/umath/matmul.h.src'),
   'src/umath/ufunc_type_resolution.c',
+  'src/umath/loop_unary_fp.cpp',
   'src/umath/clip.cpp',
   'src/umath/clip.h',
   'src/umath/dispatching.c',
@@ -1214,6 +1217,7 @@ py.extension_module('_multiarray_umath',
     'src/multiarray',
     'src/npymath',
     'src/umath',
+    'src/highway',
   ],
   dependencies: [blas_dep],
   link_with: [npymath_lib, multiarray_umath_mtargets.static_lib('_multiarray_umath_mtargets')] + highway_lib,
