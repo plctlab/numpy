@@ -76,7 +76,7 @@ jobs:
           - [
               "riscv64",
               "riscv64-linux-gnu",
-              "debian:latest",
+              "ubuntu:noble",
               "-Dallow-noblas=true",
               "test_kind or test_multiarray or test_simd or test_umath or test_ufunc",
               "-e QEMU_CPU=rv64,v=true,vext_spec=v1.0"
