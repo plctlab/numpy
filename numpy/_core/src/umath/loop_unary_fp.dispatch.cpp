@@ -12,17 +12,9 @@
 
 #include "fast_loop_macros.h"
 #include "loops_utils.h"
-#undef HWY_TARGET_INCLUDE
-#define HWY_TARGET_INCLUDE "loop_unary_fp.cpp"  // this file
-#include <hwy/foreach_target.h>  // must come before highway.h
 #include <hwy/highway.h>
 #include <hwy/aligned_allocator.h>
 
-
-namespace numpy {
-namespace HWY_NAMESPACE {  // required: unique per target
-
-// Can skip hn:: prefixes if already inside hwy::HWY_NAMESPACE.
 namespace hn = hwy::HWY_NAMESPACE;
 
 // Alternative to per-function HWY_ATTR: see HWY_BEFORE_NAMESPACE
@@ -83,40 +75,17 @@ namespace hn = hwy::HWY_NAMESPACE;
 
 SUPER(Rint, hn::Round)
 
-HWY_ATTR void DOUBLE_HWRint(char **args, npy_intp const *dimensions, npy_intp const *steps) {
-  SuperRint<npy_double>(args, dimensions, steps);
-}
-
-HWY_ATTR void FLOAT_HWRint(char **args, npy_intp const *dimensions, npy_intp const *steps) {
-  SuperRint<npy_float>(args, dimensions, steps);
-}
-
-}
-}
-
-#if HWY_ONCE
-namespace numpy {
-
-HWY_EXPORT(FLOAT_HWRint);
-HWY_EXPORT(DOUBLE_HWRint);
 
 extern "C" {
-
-NPY_NO_EXPORT void
-DOUBLE_rint(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
+NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(DOUBLE_rint)
+(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
 {
-  auto dispatcher = HWY_DYNAMIC_POINTER(DOUBLE_HWRint);
-  return dispatcher(args, dimensions, steps);
+  return SuperRint<npy_double>(args, dimensions, steps);
 }
 
-NPY_NO_EXPORT void
-FLOAT_rint(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
+NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(FLOAT_rint)
+(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
 {
-  auto dispatcher = HWY_DYNAMIC_POINTER(FLOAT_HWRint);
-  return dispatcher(args, dimensions, steps);
+  return SuperRint<npy_float>(args, dimensions, steps);
 }
-
-} // extern "C"
-} // numpy
-#endif
-
+}
