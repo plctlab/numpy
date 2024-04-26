@@ -978,6 +978,16 @@ foreach gen_mtargets : [
     ]
   ],
   [
+    'loop_unary_fp.dispatch.h',
+    'src/umath/loop_unary_fp.dispatch.cpp',
+    [
+      SSE41, SSE2,
+      VSX2,
+      ASIMD, NEON,
+      VXE, VX, RVV
+    ]
+  ],
+  [
     'loops_unary_fp_le.dispatch.h',
     src_file.process('src/umath/loops_unary_fp_le.dispatch.c.src'),
     [
@@ -1020,7 +1030,8 @@ foreach gen_mtargets : [
       'src/common',
       'src/multiarray',
       'src/npymath',
-      'src/umath'
+      'src/umath',
+      'src/highway',
     ]
   )
   if not is_variable('multiarray_umath_mtargets')
@@ -1143,7 +1154,6 @@ src_umath = umath_gen_headers + [
   src_file.process('src/umath/matmul.c.src'),
   src_file.process('src/umath/matmul.h.src'),
   'src/umath/ufunc_type_resolution.c',
-  'src/umath/loop_unary_fp.cpp',
   'src/umath/clip.cpp',
   'src/umath/clip.h',
   'src/umath/dispatching.c',
