@@ -9,7 +9,6 @@
 #include "numpy/npy_common.h"
 #include "numpy/npy_math.h"
 #include "numpy/utils.h"
-
 #include "fast_loop_macros.h"
 #include "loops_utils.h"
 #include <hwy/highway.h>
@@ -90,8 +89,14 @@ namespace hn = hwy::HWY_NAMESPACE;
     }                                                                          \
   }
 
+#define Square(x) hn::Mul(x, x) 
+//ceil, trunc, sqrt, square, 
 SUPER(Rint, hn::Round)
-
+SUPER(Floor, hn::Floor)
+SUPER(Ceil, hn::Ceil)
+SUPER(Trunc, hn::Trunc)
+SUPER(Sqrt, hn::Sqrt)
+SUPER(Square, Square)
 
 extern "C" {
 NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(DOUBLE_rint)
@@ -104,5 +109,65 @@ NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(FLOAT_rint)
 (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
 {
   return SuperRint<npy_float>(args, dimensions, steps);
+}
+
+NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(DOUBLE_floor)
+(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
+{
+  return SuperFloor<npy_double>(args, dimensions, steps);
+}
+
+NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(FLOAT_floor)
+(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
+{
+  return SuperFloor<npy_float>(args, dimensions, steps);
+}
+
+NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(DOUBLE_ceil)
+(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
+{
+  return SuperCeil<npy_double>(args, dimensions, steps);
+}
+
+NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(FLOAT_ceil)
+(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
+{
+  return SuperCeil<npy_float>(args, dimensions, steps);
+}
+
+NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(DOUBLE_trunc)
+(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
+{
+  return SuperTrunc<npy_double>(args, dimensions, steps);
+}
+
+NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(FLOAT_trunc)
+(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
+{
+  return SuperTrunc<npy_float>(args, dimensions, steps);
+}
+
+NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(DOUBLE_sqrt)
+(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
+{
+  return SuperSqrt<npy_double>(args, dimensions, steps);
+}
+
+NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(FLOAT_sqrt)
+(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
+{
+  return SuperSqrt<npy_float>(args, dimensions, steps);
+}
+
+NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(DOUBLE_square)
+(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
+{
+  return SuperSquare<npy_double>(args, dimensions, steps);
+}
+
+NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(FLOAT_square)
+(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
+{
+  return SuperSquare<npy_float>(args, dimensions, steps);
 }
 }
