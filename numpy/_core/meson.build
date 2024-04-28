@@ -971,7 +971,7 @@ foreach gen_mtargets : [
     'loops_unary_fp.dispatch.h',
     src_file.process('src/umath/loops_unary_fp.dispatch.c.src'),
     [
-      SSE41, SSE2,
+      SSE42, SSE2,
       VSX2,
       ASIMD, NEON,
       VXE, VX
@@ -981,7 +981,7 @@ foreach gen_mtargets : [
     'loop_unary_fp.dispatch.h',
     'src/umath/loop_unary_fp.dispatch.cpp',
     [
-      SSE41, SSE2,
+      SSE42, SSE2,
       VSX2,
       ASIMD, NEON,
       VXE, VX, RVV
