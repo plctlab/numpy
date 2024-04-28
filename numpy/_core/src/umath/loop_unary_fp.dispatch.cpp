@@ -21,7 +21,7 @@ namespace hn = hwy::HWY_NAMESPACE;
 #define SUPER(NAME, FUNC)                                                      \
   template <typename T>                                                        \
   HWY_ATTR void Super##NAME(char** args, npy_intp const* dimensions,           \
-                          npy_intp const* steps) {                             \
+                            npy_intp const* steps) {                           \
     const T* HWY_RESTRICT input_array = (const T*)args[0];                     \
     T* HWY_RESTRICT output_array = (T*)args[1];                                \
     const size_t size = dimensions[0];                                         \
@@ -34,17 +34,34 @@ namespace hn = hwy::HWY_NAMESPACE;
         hn::StoreN(x, d, output_array + i, 1);                                 \
       }                                                                        \
     } else if (IS_UNARY_CONT(input_array, output_array)) {                     \
-      size_t full = size & -hn::Lanes(d);                                      \
-      size_t remainder = size - full;                                          \
-      for (size_t i = 0; i < full; i += hn::Lanes(d)) {                        \
-        const auto in = hn::LoadU(d, input_array + i);                         \
-        auto x = FUNC(in);                                                     \
-        hn::StoreU(x, d, output_array + i);                                    \
+      const int vstep = hn::Lanes(d);                                          \
+      const int wstep = vstep * 4;                                             \
+      size_t len = size;                                                       \
+      for (; len >= wstep;                                                     \
+           len -= wstep, input_array += wstep, output_array += wstep) {        \
+        const auto in0 = hn::LoadU(d, input_array + vstep * 0);                \
+        auto x0 = FUNC(in0);                                                   \
+        const auto in1 = hn::LoadU(d, input_array + vstep * 1);                \
+        auto x1 = FUNC(in1);                                                   \
+        const auto in2 = hn::LoadU(d, input_array + vstep * 2);                \
+        auto x2 = FUNC(in2);                                                   \
+        const auto in3 = hn::LoadU(d, input_array + vstep * 3);                \
+        auto x3 = FUNC(in3);                                                   \
+        hn::StoreU(x0, d, output_array + vstep * 0);                           \
+        hn::StoreU(x1, d, output_array + vstep * 1);                           \
+        hn::StoreU(x2, d, output_array + vstep * 2);                           \
+        hn::StoreU(x3, d, output_array + vstep * 3);                           \
       }                                                                        \
-      if (remainder) {                                                         \
-        const auto in = hn::LoadN(d, input_array + full, remainder);           \
+      for (; len >= vstep;                                                     \
+           len -= vstep, input_array += vstep, output_array += vstep) {        \
+        const auto in = hn::LoadU(d, input_array);                             \
         auto x = FUNC(in);                                                     \
-        hn::StoreN(x, d, output_array + full, remainder);                      \
+        hn::StoreU(x, d, output_array);                                        \
+      }                                                                        \
+      if (len) {                                                               \
+        const auto in = hn::LoadN(d, input_array, len);                        \
+        auto x = FUNC(in);                                                     \
+        hn::StoreN(x, d, output_array, len);                                   \
       }                                                                        \
     } else {                                                                   \
       using TI = hwy::MakeSigned<T>;                                           \
