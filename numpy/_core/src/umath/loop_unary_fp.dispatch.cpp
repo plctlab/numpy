@@ -17,7 +17,7 @@
 namespace hn = hwy::HWY_NAMESPACE;
 
 // Alternative to per-function HWY_ATTR: see HWY_BEFORE_NAMESPACE
-#define SUPER(NAME, FUNC)                                                      \
+#define SUPER(NAME, FUNC, IS_RECIP)                                            \
   template <typename T>                                                        \
   HWY_ATTR void Super##NAME(char** args, npy_intp const* dimensions,           \
                             npy_intp const* steps) {                           \
@@ -27,10 +27,14 @@ namespace hn = hwy::HWY_NAMESPACE;
     const hn::ScalableTag<T> d;                                                \
                                                                                \
     if (is_mem_overlap(input_array, steps[0], output_array, steps[1], size)) { \
-      for (size_t i = 0; i < size; i++) {                                      \
-        const auto in = hn::LoadN(d, input_array + i, 1);                      \
+      const int lsize = sizeof(input_array[0]);                                \
+      const npy_intp ssrc = steps[0] / lsize;                                  \
+      const npy_intp sdst = steps[1] / lsize;                                  \
+      for (size_t len = size; 0 < len;                                         \
+           len--, input_array += ssrc, output_array += sdst) {                 \
+        const auto in = hn::LoadN(d, input_array, 1);                          \
         auto x = FUNC(in);                                                     \
-        hn::StoreN(x, d, output_array + i, 1);                                 \
+        hn::StoreN(x, d, output_array, 1);                                     \
       }                                                                        \
     } else if (IS_UNARY_CONT(input_array, output_array)) {                     \
       const int vstep = hn::Lanes(d);                                          \
@@ -58,7 +62,13 @@ namespace hn = hwy::HWY_NAMESPACE;
         hn::StoreU(x, d, output_array);                                        \
       }                                                                        \
       if (len) {                                                               \
-        const auto in = hn::LoadN(d, input_array, len);                        \
+        hn::Vec<hn::ScalableTag<T>> in;                                        \
+        if (IS_RECIP) {                                                        \
+          auto one = hn::Set(d, 1);                                            \
+          in = hn::LoadNOr(one, d, input_array, len);                          \
+        } else {                                                               \
+          in = hn::LoadN(d, input_array, len);                                 \
+        }                                                                      \
         auto x = FUNC(in);                                                     \
         hn::StoreN(x, d, output_array, len);                                   \
       }                                                                        \
@@ -91,12 +101,13 @@ namespace hn = hwy::HWY_NAMESPACE;
 
 #define Square(x) hn::Mul(x, x) 
 //ceil, trunc, sqrt, square, 
-SUPER(Rint, hn::Round)
-SUPER(Floor, hn::Floor)
-SUPER(Ceil, hn::Ceil)
-SUPER(Trunc, hn::Trunc)
-SUPER(Sqrt, hn::Sqrt)
-SUPER(Square, Square)
+SUPER(Rint, hn::Round, false)
+SUPER(Floor, hn::Floor, false)
+SUPER(Ceil, hn::Ceil, false)
+SUPER(Trunc, hn::Trunc, false)
+SUPER(Sqrt, hn::Sqrt, false)
+SUPER(Square, Square, false)
+SUPER(Absolute, hn::Abs, false)
 
 extern "C" {
 NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(DOUBLE_rint)
@@ -169,5 +180,19 @@ NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(FLOAT_square)
 (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
 {
   return SuperSquare<npy_float>(args, dimensions, steps);
+}
+
+NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(DOUBLE_absolute)
+(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
+{
+  SuperAbsolute<npy_double>(args, dimensions, steps);
+  npy_clear_floatstatus_barrier((char*)dimensions);
+}
+
+NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(FLOAT_absolute)
+(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
+{
+  SuperAbsolute<npy_float>(args, dimensions, steps);
+  npy_clear_floatstatus_barrier((char*)dimensions);
 }
 }
