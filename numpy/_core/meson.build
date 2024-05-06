@@ -107,7 +107,8 @@ if use_highway
       # required for hwy::Abort symbol
       'src/highway/hwy/abort.cc',
       'src/highway/hwy/per_target.cc',
-      'src/highway/hwy/targets.cc'
+      'src/highway/hwy/targets.cc',
+      'src/highway/hwy/print.cc'
     ],
     cpp_args: '-DTOOLCHAIN_MISS_ASM_HWCAP_H',
     include_directories: ['src/highway'],
@@ -969,17 +970,7 @@ foreach gen_mtargets : [
   ],
   [
     'loops_unary_fp.dispatch.h',
-    src_file.process('src/umath/loops_unary_fp.dispatch.c.src'),
-    [
-      SSE42, SSE2,
-      VSX2,
-      ASIMD, NEON,
-      VXE, VX
-    ]
-  ],
-  [
-    'loop_unary_fp.dispatch.h',
-    'src/umath/loop_unary_fp.dispatch.cpp',
+    'src/umath/loops_unary_fp.dispatch.cpp',
     [
       SSE42, SSE2,
       VSX2,

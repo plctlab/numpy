@@ -90,8 +90,15 @@ namespace hn = hwy::HWY_NAMESPACE;
         hn::ScatterIndex(x, d, output_array + i * sdst, store_index);          \
       }                                                                        \
       if (remainder) {                                                         \
-        const auto in = hn::GatherIndexN(d, input_array + full * ssrc,         \
+        hn::Vec<hn::ScalableTag<T>> in;                                        \
+        if (IS_RECIP) {                                                        \
+          auto one = hn::Set(d, 1);                                            \
+          in = hn::GatherIndexNOr(one, d, input_array + full * ssrc,           \
                                          load_index, remainder);               \
+        } else {                                                               \
+          in = hn::GatherIndexN(d, input_array + full * ssrc,                  \
+                                         load_index, remainder);               \
+        }                                                                      \
         auto x = FUNC(in);                                                     \
         hn::ScatterIndexN(x, d, output_array + full * sdst, store_index,       \
                           remainder);                                          \
@@ -100,6 +107,7 @@ namespace hn = hwy::HWY_NAMESPACE;
   }
 
 #define Square(x) hn::Mul(x, x) 
+#define Reciprocal(x) hn::Div(hn::Set(d, T(1.0)), x)
 //ceil, trunc, sqrt, square, 
 SUPER(Rint, hn::Round, false)
 SUPER(Floor, hn::Floor, false)
@@ -108,6 +116,7 @@ SUPER(Trunc, hn::Trunc, false)
 SUPER(Sqrt, hn::Sqrt, false)
 SUPER(Square, Square, false)
 SUPER(Absolute, hn::Abs, false)
+SUPER(Reciprocal, Reciprocal, true)
 
 extern "C" {
 NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(DOUBLE_rint)
@@ -194,5 +203,17 @@ NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(FLOAT_absolute)
 {
   SuperAbsolute<npy_float>(args, dimensions, steps);
   npy_clear_floatstatus_barrier((char*)dimensions);
+}
+
+NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(DOUBLE_reciprocal)
+(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
+{
+  SuperReciprocal<npy_double>(args, dimensions, steps);
+}
+
+NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(FLOAT_reciprocal)
+(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
+{
+  SuperReciprocal<npy_float>(args, dimensions, steps);
 }
 }
