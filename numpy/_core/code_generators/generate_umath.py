@@ -988,7 +988,7 @@ defdict = {
           docstrings.get('numpy._core.umath.rint'),
           None,
           TD('e', f='rint', astype={'e': 'f'}),
-          TD(inexactvec, dispatch=[('loop_unary_fp', 'fd')]),
+          TD(inexactvec, dispatch=[('loops_unary_fp', 'fd')]),
           TD('fdg' + cmplx, f='rint'),
           TD(P, f='rint'),
           ),
