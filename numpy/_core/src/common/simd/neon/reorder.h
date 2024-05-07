@@ -59,7 +59,7 @@
     #define npyv_combineh_s64(A, B) vcombine_s64(vget_high_s64(A), vget_high_s64(B))
     #define npyv_combineh_f32(A, B) vcombine_f32(vget_high_f32(A), vget_high_f32(B))
     #if defined(__riscv) && __riscv_xlen == 64
-    #define npyv_combineh_f64(A, B) vcombine_f32(vget_high_f64(A), vget_high_f64(B))
+    #define npyv_combineh_f64(A, B) vcombine_f64(vget_high_f64(A), vget_high_f64(B))
     #endif
 #endif
 
