@@ -151,7 +151,7 @@ NPYV_IMPL_NEON_ZIP(npyv_f32, f32)
         )
 #endif
 
-#if defined(__clang__) || defined(__GNUC__)
+#if (defined(__clang__) || defined(__GNUC__)) && defined(NPY_HAVE_NEON)
     #define npyv_permi128_s32 npyv_permi128_u32
     #define npyv_permi128_f32 npyv_permi128_u32
 #endif
@@ -177,7 +177,7 @@ NPYV_IMPL_NEON_ZIP(npyv_f32, f32)
         )
 #endif
 
-#if defined(__clang__) || defined(__GNUC__)
+#if defined(__clang__) || defined(__GNUC__) && defined(NPY_HAVE_NEON)
     #define npyv_permi128_s64 npyv_permi128_u64
     #define npyv_permi128_f64 npyv_permi128_u64
 #endif
