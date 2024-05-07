@@ -182,7 +182,7 @@
 #define npyv_cmpgt_f32 vcgtq_f32
 #define npyv_cmpgt_f64 vcgtq_f64
 
-#ifdef __aarch64__ || (defined(__riscv) && __riscv_xlen == 64)
+#if defined(__aarch64__) || (defined(__riscv) && __riscv_xlen == 64)
     #define npyv_cmpgt_u64 vcgtq_u64
     #define npyv_cmpgt_s64 vcgtq_s64
 #else
@@ -213,7 +213,7 @@
 #define npyv_cmpge_f32 vcgeq_f32
 #define npyv_cmpge_f64 vcgeq_f64
 
-#ifdef __aarch64__ || (defined(__riscv) && __riscv_xlen == 64)
+#if defined(__aarch64__) || (defined(__riscv) && __riscv_xlen == 64)
     #define npyv_cmpge_u64 vcgeq_u64
     #define npyv_cmpge_s64 vcgeq_s64
 #else

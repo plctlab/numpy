@@ -82,7 +82,7 @@ NPYV_IMPL_NEON_COMBINE(npyv_s32, s32)
 NPYV_IMPL_NEON_COMBINE(npyv_u64, u64)
 NPYV_IMPL_NEON_COMBINE(npyv_s64, s64)
 NPYV_IMPL_NEON_COMBINE(npyv_f32, f32)
-#ifdef __aarch64__ || (defined(__riscv) && __riscv_xlen == 64)
+#if defined(__aarch64__) || (defined(__riscv) && __riscv_xlen == 64)
 NPYV_IMPL_NEON_COMBINE(npyv_f64, f64)
 #endif
 
