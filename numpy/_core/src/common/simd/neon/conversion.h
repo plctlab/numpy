@@ -29,6 +29,10 @@
 #define npyv_cvt_b32_f32 vreinterpretq_u32_f32
 #define npyv_cvt_b64_f64 vreinterpretq_u64_f64
 
+#if defined(NPY_HAVE_RVV)
+#define val __val
+#endif
+
 // convert boolean vector to integer bitfield
 NPY_FINLINE npy_uint64 npyv_tobits_b8(npyv_b8 a)
 {

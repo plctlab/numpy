@@ -258,6 +258,7 @@ NPY_FINLINE npyv_s64 npyv_min_s64(npyv_s64 a, npyv_s64 b)
     NPY_IMPL_NEON_REDUCE_MINMAX(max, 0xff800000)
     #undef NPY_IMPL_NEON_REDUCE_MINMAX
 #endif // NPY_SIMD_F64
+#if defined(NPY_HAVE_NEON)
 #define NPY_IMPL_NEON_REDUCE_MINMAX(INTRIN, STYPE, SFX, OP)       \
     NPY_FINLINE STYPE npyv_reduce_##INTRIN##_##SFX(npyv_##SFX a)  \
     {                                                             \
@@ -265,6 +266,17 @@ NPY_FINLINE npyv_s64 npyv_min_s64(npyv_s64 a, npyv_s64 b)
         STYPE ah = (STYPE)vget_high_##SFX(a);                     \
         return al OP ah ? al : ah;                                \
     }
+#elif defined(NPY_HAVE_RVV)
+#define NPY_IMPL_NEON_REDUCE_MINMAX(INTRIN, STYPE, SFX, OP)       \
+    NPY_FINLINE STYPE npyv_reduce_##INTRIN##_##SFX(npyv_##SFX a)  \
+    {                                                             \
+        STYPE al = __riscv_vmv_x_s_i64m1_i64(vget_low_##SFX(a));  \
+        STYPE ah = __riscv_vmv_x_s_i64m1_i64(vget_high_##SFX(a)); \
+        return al OP ah ? al : ah;                                \
+    }
+#else
+    #error Something is wrong
+#endif
 NPY_IMPL_NEON_REDUCE_MINMAX(max, npy_uint64, u64, >)
 NPY_IMPL_NEON_REDUCE_MINMAX(max, npy_int64,  s64, >)
 NPY_IMPL_NEON_REDUCE_MINMAX(min, npy_uint64, u64, <)
