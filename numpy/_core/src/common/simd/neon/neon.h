@@ -5,7 +5,7 @@
 #define NPY_SIMD 128
 #define NPY_SIMD_WIDTH 16
 #define NPY_SIMD_F32 1
-#ifdef __aarch64__
+#if defined(__aarch64__) || (defined(__riscv) && __riscv_xlen == 64)
     #define NPY_SIMD_F64 1
 #else
     #define NPY_SIMD_F64 0

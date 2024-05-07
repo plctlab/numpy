@@ -42,6 +42,10 @@ NPY_FINLINE npy_uint64 npyv_tobits_b8(npyv_b8 a)
     const npyv_u8 byteOrder = {0,8,1,9,2,10,3,11,4,12,5,13,6,14,7,15};
     npyv_u8 v0 = vqtbl1q_u8(seq_scale, byteOrder);
     return vaddlvq_u16(vreinterpretq_u16_u8(v0));
+#elif defined(NPY_SIMD_F64)
+    npy_uint8 sumlo = vaddv_u8(vget_low_u8(seq_scale));
+    npy_uint8 sumhi = vaddv_u8(vget_high_u8(seq_scale));
+    return sumlo + ((int)sumhi << 8);
 #else
     npyv_u64 sumh = vpaddlq_u32(vpaddlq_u16(vpaddlq_u8(seq_scale)));
     return vgetq_lane_u64(sumh, 0) + ((int)vgetq_lane_u64(sumh, 1) << 8);
