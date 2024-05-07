@@ -130,7 +130,7 @@ NPYV_IMPL_NEON_ZIP(npyv_f32, f32)
 #ifdef __clang__
     #define npyv_permi128_u32(A, E0, E1, E2, E3) \
         __builtin_shufflevector(A, A, E0, E1, E2, E3)
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) && defined(NPY_HAVE_NEON)
     #define npyv_permi128_u32(A, E0, E1, E2, E3) \
         __builtin_shuffle(A, npyv_set_u32(E0, E1, E2, E3))
 #else
@@ -159,7 +159,7 @@ NPYV_IMPL_NEON_ZIP(npyv_f32, f32)
 #ifdef __clang__
     #define npyv_permi128_u64(A, E0, E1) \
         __builtin_shufflevector(A, A, E0, E1)
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) && defined(NPY_HAVE_NEON)
     #define npyv_permi128_u64(A, E0, E1) \
         __builtin_shuffle(A, npyv_set_u64(E0, E1))
 #else
