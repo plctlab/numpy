@@ -108,7 +108,8 @@ if use_highway
       'src/highway/hwy/abort.cc',
       'src/highway/hwy/per_target.cc',
       'src/highway/hwy/targets.cc',
-      'src/highway/hwy/print.cc'
+      'src/highway/hwy/print.cc',
+      'src/highway/hwy/aligned_allocator.cc'
     ],
     cpp_args: '-DTOOLCHAIN_MISS_ASM_HWCAP_H',
     include_directories: ['src/highway'],
@@ -989,12 +990,12 @@ foreach gen_mtargets : [
   ],
   [
     'loops_unary_complex.dispatch.h',
-    src_file.process('src/umath/loops_unary_complex.dispatch.c.src'),
+    'src/umath/loops_unary_complex.dispatch.cpp',
     [
       AVX512F, [AVX2, FMA3], SSE2,
       ASIMD, NEON,
       VSX3, VSX2,
-      VXE, VX,
+      VXE, VX, RVV
     ]
   ],
   [
