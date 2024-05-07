@@ -5,6 +5,7 @@
  ** vsx2
  ** neon asimd
  ** vx vxe
+ ** rvv
  **/
 
 #define NPY_NO_DEPRECATED_API NPY_API_VERSION

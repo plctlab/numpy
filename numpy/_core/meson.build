@@ -918,7 +918,6 @@ foreach gen_mtargets : [
       VSX4, VSX2,
       NEON_VFPV4,
       VXE, VX,
-      RVV,
     ]
   ],
   [
@@ -957,8 +956,7 @@ foreach gen_mtargets : [
       AVX512F, [AVX2, FMA3],
       VSX4, VSX3, VSX2,
       NEON_VFPV4,
-      VXE2, VXE,
-      RVV,
+      VXE2, VXE
     ]
   ],
   [

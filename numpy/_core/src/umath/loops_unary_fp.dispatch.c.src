@@ -4,6 +4,7 @@
  ** vsx2
  ** neon asimd
  ** vx vxe
+ ** rvv
  **/
 /**
  * Force use SSE only on x86, even if AVX2 or AVX512F are enabled

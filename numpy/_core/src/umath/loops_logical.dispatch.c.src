@@ -4,6 +4,7 @@
  ** sse2 avx2 avx512_skx
  ** vsx2
  ** vx
+ ** rvv
  **/
 #define _UMATHMODULE
 #define _MULTIARRAYMODULE
