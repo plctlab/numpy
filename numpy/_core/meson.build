@@ -848,6 +848,7 @@ foreach gen_mtargets : [
       'src/npymath',
       'src/umath',
       'src/highway',
+      'src/neon2rvv',
     ]
   )
   if not is_variable('multiarray_umath_mtargets')
