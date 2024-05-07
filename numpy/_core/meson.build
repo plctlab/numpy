@@ -790,7 +790,8 @@ foreach gen_mtargets : [
       'src/multiarray',
       'src/multiarray/stringdtype',
       'src/npymath',
-      'src/umath'
+      'src/umath',
+      'src/neon2rvv',
     ]
   )
   if not is_variable('multiarray_umath_mtargets')
@@ -1020,7 +1021,8 @@ foreach gen_mtargets : [
       'src/common',
       'src/multiarray',
       'src/npymath',
-      'src/umath'
+      'src/umath',
+      'src/neon2rvv',
     ]
   )
   if not is_variable('multiarray_umath_mtargets')
@@ -1216,6 +1218,7 @@ py.extension_module('_multiarray_umath',
     'src/multiarray',
     'src/npymath',
     'src/umath',
+    'src/neon2rvv',
   ],
   dependencies: [blas_dep],
   link_with: [npymath_lib, multiarray_umath_mtargets.static_lib('_multiarray_umath_mtargets')] + highway_lib,
