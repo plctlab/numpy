@@ -21,4 +21,4 @@
 	url = https://github.com/python/pythoncapi-compat
 [submodule "numpy/_core/src/neon2rvv"]
 	path = numpy/_core/src/neon2rvv
-	url = https://github.com/howjmay/neon2rvv.git
+	url = https://github.com/ksco/neon2rvv.git
