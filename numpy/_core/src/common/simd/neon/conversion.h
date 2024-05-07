@@ -136,7 +136,7 @@ npyv_pack_b8_b64(npyv_b64 a, npyv_b64 b, npyv_b64 c, npyv_b64 d,
 }
 
 // round to nearest integer
-#if NPY_SIMD_F64
+#if NPY_SIMD_F64 && !defined(__riscv)
     #define npyv_round_s32_f32 vcvtnq_s32_f32
     NPY_FINLINE npyv_s32 npyv_round_s32_f64(npyv_f64 a, npyv_f64 b)
     {

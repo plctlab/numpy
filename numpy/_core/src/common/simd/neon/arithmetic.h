@@ -70,7 +70,7 @@ NPY_FINLINE npyv_u8 npyv_divc_u8(npyv_u8 a, const npyv_u8x3 divisor)
     const uint8x8_t mulc_lo = vget_low_u8(divisor.val[0]);
     // high part of unsigned multiplication
     uint16x8_t mull_lo  = vmull_u8(vget_low_u8(a), mulc_lo);
-#if NPY_SIMD_F64
+#if NPY_SIMD_F64 && !defined(__riscv)
     uint16x8_t mull_hi  = vmull_high_u8(a, divisor.val[0]);
     // get the high unsigned bytes
     uint8x16_t mulhi    = vuzp2q_u8(vreinterpretq_u8_u16(mull_lo), vreinterpretq_u8_u16(mull_hi));
@@ -92,7 +92,7 @@ NPY_FINLINE npyv_s8 npyv_divc_s8(npyv_s8 a, const npyv_s8x3 divisor)
     const int8x8_t mulc_lo = vget_low_s8(divisor.val[0]);
     // high part of signed multiplication
     int16x8_t mull_lo  = vmull_s8(vget_low_s8(a), mulc_lo);
-#if NPY_SIMD_F64
+#if NPY_SIMD_F64 && !defined(__riscv)
     int16x8_t mull_hi  = vmull_high_s8(a, divisor.val[0]);
     // get the high unsigned bytes
     int8x16_t mulhi    = vuzp2q_s8(vreinterpretq_s8_s16(mull_lo), vreinterpretq_s8_s16(mull_hi));
@@ -114,7 +114,7 @@ NPY_FINLINE npyv_u16 npyv_divc_u16(npyv_u16 a, const npyv_u16x3 divisor)
     const uint16x4_t mulc_lo = vget_low_u16(divisor.val[0]);
     // high part of unsigned multiplication
     uint32x4_t mull_lo  = vmull_u16(vget_low_u16(a), mulc_lo);
-#if NPY_SIMD_F64
+#if NPY_SIMD_F64 && !defined(__riscv)
     uint32x4_t mull_hi  = vmull_high_u16(a, divisor.val[0]);
     // get the high unsigned bytes
     uint16x8_t mulhi    = vuzp2q_u16(vreinterpretq_u16_u32(mull_lo), vreinterpretq_u16_u32(mull_hi));
@@ -136,7 +136,7 @@ NPY_FINLINE npyv_s16 npyv_divc_s16(npyv_s16 a, const npyv_s16x3 divisor)
     const int16x4_t mulc_lo = vget_low_s16(divisor.val[0]);
     // high part of signed multiplication
     int32x4_t mull_lo  = vmull_s16(vget_low_s16(a), mulc_lo);
-#if NPY_SIMD_F64
+#if NPY_SIMD_F64 && !defined(__riscv)
     int32x4_t mull_hi  = vmull_high_s16(a, divisor.val[0]);
     // get the high unsigned bytes
     int16x8_t mulhi    = vuzp2q_s16(vreinterpretq_s16_s32(mull_lo), vreinterpretq_s16_s32(mull_hi));
@@ -158,7 +158,7 @@ NPY_FINLINE npyv_u32 npyv_divc_u32(npyv_u32 a, const npyv_u32x3 divisor)
     const uint32x2_t mulc_lo = vget_low_u32(divisor.val[0]);
     // high part of unsigned multiplication
     uint64x2_t mull_lo  = vmull_u32(vget_low_u32(a), mulc_lo);
-#if NPY_SIMD_F64
+#if NPY_SIMD_F64 && !defined(__riscv)
     uint64x2_t mull_hi  = vmull_high_u32(a, divisor.val[0]);
     // get the high unsigned bytes
     uint32x4_t mulhi    = vuzp2q_u32(vreinterpretq_u32_u64(mull_lo), vreinterpretq_u32_u64(mull_hi));
@@ -180,7 +180,7 @@ NPY_FINLINE npyv_s32 npyv_divc_s32(npyv_s32 a, const npyv_s32x3 divisor)
     const int32x2_t mulc_lo = vget_low_s32(divisor.val[0]);
     // high part of signed multiplication
     int64x2_t mull_lo  = vmull_s32(vget_low_s32(a), mulc_lo);
-#if NPY_SIMD_F64
+#if NPY_SIMD_F64 && !defined(__riscv)
     int64x2_t mull_hi  = vmull_high_s32(a, divisor.val[0]);
     // get the high unsigned bytes
     int32x4_t mulhi    = vuzp2q_s32(vreinterpretq_s32_s64(mull_lo), vreinterpretq_s32_s64(mull_hi));
@@ -321,7 +321,7 @@ NPY_FINLINE npyv_f32 npyv_muladdsub_f32(npyv_f32 a, npyv_f32 b, npyv_f32 c)
 #endif
 
 // expand the source vector and performs sum reduce
-#if NPY_SIMD_F64
+#if NPY_SIMD_F64 && !defined(__riscv)
     #define npyv_sumup_u8  vaddlvq_u8
     #define npyv_sumup_u16 vaddlvq_u16
 #else
