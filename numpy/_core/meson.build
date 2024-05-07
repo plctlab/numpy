@@ -911,7 +911,7 @@ foreach gen_mtargets : [
       AVX512_SKX, [AVX2, FMA3],
       VSX4, VSX2,
       NEON_VFPV4,
-      VXE, VX
+      VXE, VX,
     ]
   ],
   [
@@ -948,7 +948,7 @@ foreach gen_mtargets : [
       AVX512F, [AVX2, FMA3],
       VSX4, VSX3, VSX2,
       NEON_VFPV4,
-      VXE2, VXE
+      VXE2, VXE,
     ]
   ],
   [
@@ -963,7 +963,7 @@ foreach gen_mtargets : [
       ASIMD, NEON,
       AVX512_SKX, AVX2, SSE2,
       VSX2,
-      VXE, VX
+      VXE, VX,
     ]
   ],
   [
@@ -973,7 +973,8 @@ foreach gen_mtargets : [
       SSE41, SSE2,
       VSX2,
       ASIMD, NEON,
-      VXE, VX
+      VXE, VX,
+      RVV
     ]
   ],
   [
