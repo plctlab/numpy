@@ -4,7 +4,6 @@
  ** neon asimd
  ** vsx2 vsx3
  ** vx vxe
- ** rvv
  **/
 #define _UMATHMODULE
 #define _MULTIARRAYMODULE

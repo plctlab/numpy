@@ -878,7 +878,7 @@ foreach gen_mtargets : [
       ASIMD, NEON,
       VSX3, VSX2,
       VXE, VX,
-      RVV,
+      # RVV, triggered gcc 14.0.1 ICE
     ]
   ],
   [
