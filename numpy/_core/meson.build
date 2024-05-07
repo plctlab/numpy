@@ -728,6 +728,7 @@ _umath_tests_mtargets = mod_features.multi_targets(
     ASIMDHP, ASIMD, NEON,
     VSX3, VSX2, VSX,
     VXE, VX,
+    RVV,
   ],
   baseline: CPU_BASELINE,
   prefix: 'NPY_',
@@ -772,7 +773,8 @@ foreach gen_mtargets : [
       AVX512_SKX, AVX2, XOP, SSE42, SSE2,
       VSX2,
       ASIMD, NEON,
-      VXE, VX
+      VXE, VX,
+      RVV,
     ]
   ],
 ]
@@ -876,6 +878,7 @@ foreach gen_mtargets : [
       ASIMD, NEON,
       VSX3, VSX2,
       VXE, VX,
+      RVV,
     ]
   ],
   [
@@ -886,6 +889,7 @@ foreach gen_mtargets : [
       NEON,
       VSX4, VSX2,
       VX,
+      RVV,
     ]
   ],
   [
@@ -896,6 +900,7 @@ foreach gen_mtargets : [
       VSX3, VSX2,
       NEON,
       VXE, VX,
+      RVV,
     ]
   ],
   [
@@ -913,6 +918,7 @@ foreach gen_mtargets : [
       VSX4, VSX2,
       NEON_VFPV4,
       VXE, VX,
+      RVV,
     ]
   ],
   [
@@ -923,6 +929,7 @@ foreach gen_mtargets : [
       AVX512_SKX, AVX2, SSE2,
       VSX2,
       VX,
+      RVV,
     ]
   ],
   [
@@ -933,6 +940,7 @@ foreach gen_mtargets : [
       AVX512_SKX, AVX2, SSE2,
       VSX2,
       VXE, VX,
+      RVV,
     ]
   ],
   [
@@ -950,6 +958,7 @@ foreach gen_mtargets : [
       VSX4, VSX3, VSX2,
       NEON_VFPV4,
       VXE2, VXE,
+      RVV,
     ]
   ],
   [
@@ -965,6 +974,7 @@ foreach gen_mtargets : [
       AVX512_SKX, AVX2, SSE2,
       VSX2,
       VXE, VX,
+      RVV,
     ]
   ],
   [
@@ -975,7 +985,7 @@ foreach gen_mtargets : [
       VSX2,
       ASIMD, NEON,
       VXE, VX,
-      RVV
+      RVV,
     ]
   ],
   [
@@ -985,6 +995,7 @@ foreach gen_mtargets : [
       SSE41, SSE2,
       VSX2,
       ASIMD, NEON,
+      RVV,
     ]
   ],
   [
@@ -995,6 +1006,7 @@ foreach gen_mtargets : [
       ASIMD, NEON,
       VSX3, VSX2,
       VXE, VX,
+      RVV,
     ]
   ],
   [
@@ -1005,6 +1017,7 @@ foreach gen_mtargets : [
       NEON,
       VSX2,
       VX,
+      RVV,
     ]
   ],
 ]
