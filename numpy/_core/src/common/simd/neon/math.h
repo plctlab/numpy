@@ -162,7 +162,7 @@ NPY_FINLINE npyv_s64 npyv_min_s64(npyv_s64 a, npyv_s64 b)
     return vbslq_s64(npyv_cmplt_s64(a, b), a, b);
 }
 // reduce min/max for all data types
-#if NPY_SIMD_F64
+#if NPY_SIMD_F64 && !defined(__riscv)
     #define npyv_reduce_max_u8 vmaxvq_u8
     #define npyv_reduce_max_s8 vmaxvq_s8
     #define npyv_reduce_max_u16 vmaxvq_u16
