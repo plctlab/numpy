@@ -238,7 +238,7 @@ NPY_FINLINE npyv_s64 npyv_divc_s64(npyv_s64 a, const npyv_s64x3 divisor)
 /***************************
  * FUSED F32
  ***************************/
-#ifdef NPY_HAVE_NEON_VFPV4 // FMA
+#if defined (NPY_HAVE_NEON_VFPV4) || defined(NPY_HAVE_RVV) // FMA
     // multiply and add, a*b + c
     NPY_FINLINE npyv_f32 npyv_muladd_f32(npyv_f32 a, npyv_f32 b, npyv_f32 c)
     { return vfmaq_f32(c, a, b); }
