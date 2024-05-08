@@ -91,10 +91,17 @@
 #define npyv_xor_s32 veorq_s32
 #define npyv_xor_u64 veorq_u64
 #define npyv_xor_s64 veorq_s64
+#if defined(__riscv) && __riscv_xlen == 64
+#define npyv_xor_f32(A, B) \
+    vreinterpretq_f32_u32(veorq_u32(vreinterpretq_u32_f32(A), vreinterpretq_u32_f32(B)))
+#define npyv_xor_f64(A, B) \
+    vreinterpretq_f64_u64(veorq_u64(vreinterpretq_u64_f64(A), vreinterpretq_u64_f64(B)))
+#else
 #define npyv_xor_f32(A, B) \
     vreinterpretq_f32_u8(veorq_u8(vreinterpretq_u8_f32(A), vreinterpretq_u8_f32(B)))
 #define npyv_xor_f64(A, B) \
     vreinterpretq_f64_u8(veorq_u8(vreinterpretq_u8_f64(A), vreinterpretq_u8_f64(B)))
+#endif
 #define npyv_xor_b8   veorq_u8
 #define npyv_xor_b16  veorq_u16
 #define npyv_xor_b32  veorq_u32
@@ -136,7 +143,7 @@
 #define npyv_cmpeq_f32 vceqq_f32
 #define npyv_cmpeq_f64 vceqq_f64
 
-#ifdef __aarch64__
+#if defined(__aarch64__) || (defined(__riscv) && __riscv_xlen == 64)
     #define npyv_cmpeq_u64 vceqq_u64
     #define npyv_cmpeq_s64 vceqq_s64
 #else
@@ -175,7 +182,7 @@
 #define npyv_cmpgt_f32 vcgtq_f32
 #define npyv_cmpgt_f64 vcgtq_f64
 
-#ifdef __aarch64__
+#if defined(__aarch64__) || (defined(__riscv) && __riscv_xlen == 64)
     #define npyv_cmpgt_u64 vcgtq_u64
     #define npyv_cmpgt_s64 vcgtq_s64
 #else
@@ -206,7 +213,7 @@
 #define npyv_cmpge_f32 vcgeq_f32
 #define npyv_cmpge_f64 vcgeq_f64
 
-#ifdef __aarch64__
+#if defined(__aarch64__) || (defined(__riscv) && __riscv_xlen == 64)
     #define npyv_cmpge_u64 vcgeq_u64
     #define npyv_cmpge_s64 vcgeq_s64
 #else

@@ -89,7 +89,7 @@ NPY_FINLINE npyv_f32 npyv_recip_f32(npyv_f32 a)
 // Maximum, supports IEEE floating-point arithmetic (IEC 60559),
 // - If one of the two vectors contains NaN, the equivalent element of the other vector is set
 // - Only if both corresponded elements are NaN, NaN is set.
-#ifdef NPY_HAVE_ASIMD
+#if defined (NPY_HAVE_ASIMD) || defined(NPY_HAVE_RVV)
     #define npyv_maxp_f32 vmaxnmq_f32
 #else
     NPY_FINLINE npyv_f32 npyv_maxp_f32(npyv_f32 a, npyv_f32 b)
@@ -128,7 +128,7 @@ NPY_FINLINE npyv_s64 npyv_max_s64(npyv_s64 a, npyv_s64 b)
 // Minimum, supports IEEE floating-point arithmetic (IEC 60559),
 // - If one of the two vectors contains NaN, the equivalent element of the other vector is set
 // - Only if both corresponded elements are NaN, NaN is set.
-#ifdef NPY_HAVE_ASIMD
+#if defined (NPY_HAVE_ASIMD) || defined(NPY_HAVE_RVV)
     #define npyv_minp_f32 vminnmq_f32
 #else
     NPY_FINLINE npyv_f32 npyv_minp_f32(npyv_f32 a, npyv_f32 b)
@@ -258,6 +258,7 @@ NPY_FINLINE npyv_s64 npyv_min_s64(npyv_s64 a, npyv_s64 b)
     NPY_IMPL_NEON_REDUCE_MINMAX(max, 0xff800000)
     #undef NPY_IMPL_NEON_REDUCE_MINMAX
 #endif // NPY_SIMD_F64
+#if defined(NPY_HAVE_NEON)
 #define NPY_IMPL_NEON_REDUCE_MINMAX(INTRIN, STYPE, SFX, OP)       \
     NPY_FINLINE STYPE npyv_reduce_##INTRIN##_##SFX(npyv_##SFX a)  \
     {                                                             \
@@ -269,12 +270,27 @@ NPY_IMPL_NEON_REDUCE_MINMAX(max, npy_uint64, u64, >)
 NPY_IMPL_NEON_REDUCE_MINMAX(max, npy_int64,  s64, >)
 NPY_IMPL_NEON_REDUCE_MINMAX(min, npy_uint64, u64, <)
 NPY_IMPL_NEON_REDUCE_MINMAX(min, npy_int64,  s64, <)
+#elif defined(NPY_HAVE_RVV)
+#define NPY_IMPL_NEON_REDUCE_MINMAX(INTRIN, STYPE, SFX, SFX1, NAME, EXT)    \
+    NPY_FINLINE STYPE npyv_reduce_##INTRIN##_##SFX(npyv_##SFX a)            \
+    {                                                                       \
+        return __riscv_vmv_x_s_##SFX1##m1_##SFX1(                           \
+            __riscv_vred##NAME##_vs_##SFX1##m1_##SFX1##m1(                  \
+                a, vdupq_n_##SFX(EXT), 2));                                 \
+    }
+NPY_IMPL_NEON_REDUCE_MINMAX(max, npy_uint64, u64, u64, maxu, 0)
+NPY_IMPL_NEON_REDUCE_MINMAX(max, npy_int64,  s64, i64, max, INT64_MIN)
+NPY_IMPL_NEON_REDUCE_MINMAX(min, npy_uint64, u64, u64, minu, UINT64_MAX)
+NPY_IMPL_NEON_REDUCE_MINMAX(min, npy_int64,  s64, i64, min, INT64_MAX)
+#else
+    #error Something is wrong
+#endif
 #undef NPY_IMPL_NEON_REDUCE_MINMAX
 
 // round to nearest integer even
 NPY_FINLINE npyv_f32 npyv_rint_f32(npyv_f32 a)
 {
-#ifdef NPY_HAVE_ASIMD
+#if defined (NPY_HAVE_ASIMD) || defined(NPY_HAVE_RVV)
     return vrndnq_f32(a);
 #else
     // ARMv7 NEON only supports fp to int truncate conversion.
@@ -304,7 +320,7 @@ NPY_FINLINE npyv_f32 npyv_rint_f32(npyv_f32 a)
 #endif // NPY_SIMD_F64
 
 // ceil
-#ifdef NPY_HAVE_ASIMD
+#if defined (NPY_HAVE_ASIMD) || defined(NPY_HAVE_RVV)
     #define npyv_ceil_f32 vrndpq_f32
 #else
     NPY_FINLINE npyv_f32 npyv_ceil_f32(npyv_f32 a)
@@ -338,7 +354,7 @@ NPY_FINLINE npyv_f32 npyv_rint_f32(npyv_f32 a)
 #endif // NPY_SIMD_F64
 
 // trunc
-#ifdef NPY_HAVE_ASIMD
+#if defined (NPY_HAVE_ASIMD) || defined(NPY_HAVE_RVV)
     #define npyv_trunc_f32 vrndq_f32
 #else
     NPY_FINLINE npyv_f32 npyv_trunc_f32(npyv_f32 a)
@@ -379,7 +395,7 @@ NPY_FINLINE npyv_f32 npyv_rint_f32(npyv_f32 a)
 #endif // NPY_SIMD_F64
 
 // floor
-#ifdef NPY_HAVE_ASIMD
+#if defined (NPY_HAVE_ASIMD) || defined(NPY_HAVE_RVV)
     #define npyv_floor_f32 vrndmq_f32
 #else
     NPY_FINLINE npyv_f32 npyv_floor_f32(npyv_f32 a)
@@ -408,7 +424,7 @@ NPY_FINLINE npyv_f32 npyv_rint_f32(npyv_f32 a)
                  mask = vandq_u32(mask, nnan_mask);
         return vbslq_f32(mask, floor, a);
    }
-#endif // NPY_HAVE_ASIMD
+#endif // defined (NPY_HAVE_ASIMD) || defined(NPY_HAVE_RVV)
 #if NPY_SIMD_F64
     #define npyv_floor_f64 vrndmq_f64
 #endif // NPY_SIMD_F64

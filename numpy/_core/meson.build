@@ -728,6 +728,7 @@ _umath_tests_mtargets = mod_features.multi_targets(
     ASIMDHP, ASIMD, NEON,
     VSX3, VSX2, VSX,
     VXE, VX,
+    RVV,
   ],
   baseline: CPU_BASELINE,
   prefix: 'NPY_',
@@ -772,7 +773,8 @@ foreach gen_mtargets : [
       AVX512_SKX, AVX2, XOP, SSE42, SSE2,
       VSX2,
       ASIMD, NEON,
-      VXE, VX
+      VXE, VX,
+      RVV,
     ]
   ],
 ]
@@ -790,7 +792,8 @@ foreach gen_mtargets : [
       'src/multiarray',
       'src/multiarray/stringdtype',
       'src/npymath',
-      'src/umath'
+      'src/umath',
+      'src/neon2rvv',
     ]
   )
   if not is_variable('multiarray_umath_mtargets')
@@ -848,6 +851,7 @@ foreach gen_mtargets : [
       'src/npymath',
       'src/umath',
       'src/highway',
+      'src/neon2rvv',
     ]
   )
   if not is_variable('multiarray_umath_mtargets')
@@ -874,6 +878,7 @@ foreach gen_mtargets : [
       ASIMD, NEON,
       VSX3, VSX2,
       VXE, VX,
+      # RVV, triggered gcc 14.0.1 ICE
     ]
   ],
   [
@@ -884,6 +889,7 @@ foreach gen_mtargets : [
       NEON,
       VSX4, VSX2,
       VX,
+      RVV,
     ]
   ],
   [
@@ -894,6 +900,7 @@ foreach gen_mtargets : [
       VSX3, VSX2,
       NEON,
       VXE, VX,
+      RVV,
     ]
   ],
   [
@@ -910,7 +917,7 @@ foreach gen_mtargets : [
       AVX512_SKX, [AVX2, FMA3],
       VSX4, VSX2,
       NEON_VFPV4,
-      VXE, VX
+      VXE, VX,
     ]
   ],
   [
@@ -921,6 +928,7 @@ foreach gen_mtargets : [
       AVX512_SKX, AVX2, SSE2,
       VSX2,
       VX,
+      RVV,
     ]
   ],
   [
@@ -931,6 +939,7 @@ foreach gen_mtargets : [
       AVX512_SKX, AVX2, SSE2,
       VSX2,
       VXE, VX,
+      RVV,
     ]
   ],
   [
@@ -962,7 +971,8 @@ foreach gen_mtargets : [
       ASIMD, NEON,
       AVX512_SKX, AVX2, SSE2,
       VSX2,
-      VXE, VX
+      VXE, VX,
+      RVV,
     ]
   ],
   [
@@ -972,7 +982,8 @@ foreach gen_mtargets : [
       SSE41, SSE2,
       VSX2,
       ASIMD, NEON,
-      VXE, VX
+      VXE, VX,
+      RVV,
     ]
   ],
   [
@@ -982,6 +993,7 @@ foreach gen_mtargets : [
       SSE41, SSE2,
       VSX2,
       ASIMD, NEON,
+      RVV,
     ]
   ],
   [
@@ -992,6 +1004,7 @@ foreach gen_mtargets : [
       ASIMD, NEON,
       VSX3, VSX2,
       VXE, VX,
+      RVV,
     ]
   ],
   [
@@ -1002,6 +1015,7 @@ foreach gen_mtargets : [
       NEON,
       VSX2,
       VX,
+      RVV,
     ]
   ],
 ]
@@ -1018,7 +1032,8 @@ foreach gen_mtargets : [
       'src/common',
       'src/multiarray',
       'src/npymath',
-      'src/umath'
+      'src/umath',
+      'src/neon2rvv',
     ]
   )
   if not is_variable('multiarray_umath_mtargets')
@@ -1214,6 +1229,7 @@ py.extension_module('_multiarray_umath',
     'src/multiarray',
     'src/npymath',
     'src/umath',
+    'src/neon2rvv',
   ],
   dependencies: [blas_dep],
   link_with: [npymath_lib, multiarray_umath_mtargets.static_lib('_multiarray_umath_mtargets')] + highway_lib,

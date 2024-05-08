@@ -5,6 +5,10 @@
 #ifndef _NPY_SIMD_NEON_CVT_H
 #define _NPY_SIMD_NEON_CVT_H
 
+#if defined(NPY_HAVE_RVV)
+#define val __val
+#endif
+
 // convert boolean vectors to integer vectors
 #define npyv_cvt_u8_b8(A)   A
 #define npyv_cvt_s8_b8   vreinterpretq_s8_u8
@@ -38,6 +42,10 @@ NPY_FINLINE npy_uint64 npyv_tobits_b8(npyv_b8 a)
     const npyv_u8 byteOrder = {0,8,1,9,2,10,3,11,4,12,5,13,6,14,7,15};
     npyv_u8 v0 = vqtbl1q_u8(seq_scale, byteOrder);
     return vaddlvq_u16(vreinterpretq_u16_u8(v0));
+#elif defined(NPY_SIMD_F64)
+    npy_uint8 sumlo = vaddv_u8(vget_low_u8(seq_scale));
+    npy_uint8 sumhi = vaddv_u8(vget_high_u8(seq_scale));
+    return sumlo + ((int)sumhi << 8);
 #else
     npyv_u64 sumh = vpaddlq_u32(vpaddlq_u16(vpaddlq_u8(seq_scale)));
     return vgetq_lane_u64(sumh, 0) + ((int)vgetq_lane_u64(sumh, 1) << 8);
@@ -128,7 +136,7 @@ npyv_pack_b8_b64(npyv_b64 a, npyv_b64 b, npyv_b64 c, npyv_b64 d,
 }
 
 // round to nearest integer
-#if NPY_SIMD_F64
+#if NPY_SIMD_F64 && !defined(__riscv)
     #define npyv_round_s32_f32 vcvtnq_s32_f32
     NPY_FINLINE npyv_s32 npyv_round_s32_f64(npyv_f64 a, npyv_f64 b)
     {

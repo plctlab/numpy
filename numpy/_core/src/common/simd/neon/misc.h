@@ -31,7 +31,7 @@
 
 // vector with specific values set to each lane and
 // set a specific value to all remained lanes
-#if defined(__clang__) || defined(__GNUC__)
+#if (defined(__clang__) || defined(__GNUC__)) && !defined(NPY_HAVE_RVV)
     #define npyv_setf_u8(FILL, ...)  ((uint8x16_t){NPYV__SET_FILL_16(uint8_t, FILL, __VA_ARGS__)})
     #define npyv_setf_s8(FILL, ...)  ((int8x16_t){NPYV__SET_FILL_16(int8_t, FILL, __VA_ARGS__)})
     #define npyv_setf_u16(FILL, ...) ((uint16x8_t){NPYV__SET_FILL_8(uint16_t, FILL, __VA_ARGS__)})

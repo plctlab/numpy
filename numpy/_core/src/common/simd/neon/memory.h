@@ -7,6 +7,10 @@
 
 #include "misc.h"
 
+#if defined(NPY_HAVE_RVV)
+#define val __val
+#endif
+
 /***************************
  * load/store
  ***************************/

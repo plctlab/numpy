@@ -5,6 +5,10 @@
 #ifndef _NPY_SIMD_NEON_REORDER_H
 #define _NPY_SIMD_NEON_REORDER_H
 
+#if defined(NPY_HAVE_RVV)
+#define val __val
+#endif
+
 // combine lower part of two vectors
 #ifdef __aarch64__
     #define npyv_combinel_u8(A, B)  vreinterpretq_u8_u64(vzip1q_u64(vreinterpretq_u64_u8(A), vreinterpretq_u64_u8(B)))
@@ -27,6 +31,9 @@
     #define npyv_combinel_u64(A, B) vcombine_u64(vget_low_u64(A), vget_low_u64(B))
     #define npyv_combinel_s64(A, B) vcombine_s64(vget_low_s64(A), vget_low_s64(B))
     #define npyv_combinel_f32(A, B) vcombine_f32(vget_low_f32(A), vget_low_f32(B))
+    #if defined(__riscv) && __riscv_xlen == 64
+    #define npyv_combinel_f64(A, B) vcombine_f64(vget_low_f64(A), vget_low_f64(B))
+    #endif
 #endif
 
 // combine higher part of two vectors
@@ -51,6 +58,9 @@
     #define npyv_combineh_u64(A, B) vcombine_u64(vget_high_u64(A), vget_high_u64(B))
     #define npyv_combineh_s64(A, B) vcombine_s64(vget_high_s64(A), vget_high_s64(B))
     #define npyv_combineh_f32(A, B) vcombine_f32(vget_high_f32(A), vget_high_f32(B))
+    #if defined(__riscv) && __riscv_xlen == 64
+    #define npyv_combineh_f64(A, B) vcombine_f64(vget_high_f64(A), vget_high_f64(B))
+    #endif
 #endif
 
 // combine two vectors from lower and higher parts of two other vectors
@@ -72,7 +82,7 @@ NPYV_IMPL_NEON_COMBINE(npyv_s32, s32)
 NPYV_IMPL_NEON_COMBINE(npyv_u64, u64)
 NPYV_IMPL_NEON_COMBINE(npyv_s64, s64)
 NPYV_IMPL_NEON_COMBINE(npyv_f32, f32)
-#ifdef __aarch64__
+#if defined(__aarch64__) || (defined(__riscv) && __riscv_xlen == 64)
 NPYV_IMPL_NEON_COMBINE(npyv_f64, f64)
 #endif
 
@@ -130,7 +140,7 @@ NPYV_IMPL_NEON_ZIP(npyv_f32, f32)
 #ifdef __clang__
     #define npyv_permi128_u32(A, E0, E1, E2, E3) \
         __builtin_shufflevector(A, A, E0, E1, E2, E3)
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) && defined(NPY_HAVE_NEON)
     #define npyv_permi128_u32(A, E0, E1, E2, E3) \
         __builtin_shuffle(A, npyv_set_u32(E0, E1, E2, E3))
 #else
@@ -151,7 +161,7 @@ NPYV_IMPL_NEON_ZIP(npyv_f32, f32)
         )
 #endif
 
-#if defined(__clang__) || defined(__GNUC__)
+#if (defined(__clang__) || defined(__GNUC__)) && defined(NPY_HAVE_NEON)
     #define npyv_permi128_s32 npyv_permi128_u32
     #define npyv_permi128_f32 npyv_permi128_u32
 #endif
@@ -159,7 +169,7 @@ NPYV_IMPL_NEON_ZIP(npyv_f32, f32)
 #ifdef __clang__
     #define npyv_permi128_u64(A, E0, E1) \
         __builtin_shufflevector(A, A, E0, E1)
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) && defined(NPY_HAVE_NEON)
     #define npyv_permi128_u64(A, E0, E1) \
         __builtin_shuffle(A, npyv_set_u64(E0, E1))
 #else
@@ -177,7 +187,7 @@ NPYV_IMPL_NEON_ZIP(npyv_f32, f32)
         )
 #endif
 
-#if defined(__clang__) || defined(__GNUC__)
+#if defined(__clang__) || defined(__GNUC__) && defined(NPY_HAVE_NEON)
     #define npyv_permi128_s64 npyv_permi128_u64
     #define npyv_permi128_f64 npyv_permi128_u64
 #endif
