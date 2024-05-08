@@ -271,17 +271,17 @@ NPY_IMPL_NEON_REDUCE_MINMAX(max, npy_int64,  s64, >)
 NPY_IMPL_NEON_REDUCE_MINMAX(min, npy_uint64, u64, <)
 NPY_IMPL_NEON_REDUCE_MINMAX(min, npy_int64,  s64, <)
 #elif defined(NPY_HAVE_RVV)
-#define NPY_IMPL_NEON_REDUCE_MINMAX(INTRIN, STYPE, SFX, SFX1, NAME)     \
-    NPY_FINLINE STYPE npyv_reduce_##INTRIN##_##SFX(npyv_##SFX a)        \
-    {                                                                   \
-        return __riscv_vmv_x_s_##SFX1##m1_##SFX1(                       \
-            __riscv_vred##NAME##_vs_##SFX1##m1_##SFX1##m1(              \
-                a, vdupq_n_##SFX(0), 2));                               \
+#define NPY_IMPL_NEON_REDUCE_MINMAX(INTRIN, STYPE, SFX, SFX1, NAME, EXT)    \
+    NPY_FINLINE STYPE npyv_reduce_##INTRIN##_##SFX(npyv_##SFX a)            \
+    {                                                                       \
+        return __riscv_vmv_x_s_##SFX1##m1_##SFX1(                           \
+            __riscv_vred##NAME##_vs_##SFX1##m1_##SFX1##m1(                  \
+                a, vdupq_n_##SFX(EXT), 2));                                 \
     }
-NPY_IMPL_NEON_REDUCE_MINMAX(max, npy_uint64, u64, u64, maxu)
-NPY_IMPL_NEON_REDUCE_MINMAX(max, npy_int64,  s64, i64, max)
-NPY_IMPL_NEON_REDUCE_MINMAX(min, npy_uint64, u64, u64, minu)
-NPY_IMPL_NEON_REDUCE_MINMAX(min, npy_int64,  s64, i64, min)
+NPY_IMPL_NEON_REDUCE_MINMAX(max, npy_uint64, u64, u64, maxu, 0)
+NPY_IMPL_NEON_REDUCE_MINMAX(max, npy_int64,  s64, i64, max, INT64_MIN)
+NPY_IMPL_NEON_REDUCE_MINMAX(min, npy_uint64, u64, u64, minu, UINT64_MAX)
+NPY_IMPL_NEON_REDUCE_MINMAX(min, npy_int64,  s64, i64, min, INT64_MAX)
 #else
     #error Something is wrong
 #endif
