@@ -16,55 +16,81 @@
 
 namespace hn = hwy::HWY_NAMESPACE;
 
-enum HWY_OP {
-  HWY_ROUND,
-  HWY_FLOOR,
-  HWY_CEIL,
-  HWY_TRUNC,
-  HWY_SQRT,
-  HWY_SQUARE,
-  HWY_ABS,
-  HWY_RECIPROCAL,
+template <typename T>
+struct OpRound {
+  HWY_ATTR hn::VFromD<hn::ScalableTag<T>> operator()(
+      hn::VFromD<hn::ScalableTag<T>> a) {
+    return hn::Round(a);
+  }
 };
 
-#define FUNC(result, in)                        \
-  switch (op) {                                 \
-    case HWY_ROUND:                             \
-      result = hn::Round(in);                   \
-      break;                                    \
-    case HWY_FLOOR:                             \
-      result = hn::Floor(in);                   \
-      break;                                    \
-    case HWY_CEIL:                              \
-      result = hn::Ceil(in);                    \
-      break;                                    \
-    case HWY_TRUNC:                             \
-      result = hn::Trunc(in);                   \
-      break;                                    \
-    case HWY_SQRT:                              \
-      result = hn::Sqrt(in);                    \
-      break;                                    \
-    case HWY_SQUARE:                            \
-      result = hn::Mul(in, in);                 \
-      break;                                    \
-    case HWY_ABS:                               \
-      result = hn::Abs(in);                     \
-      break;                                    \
-    case HWY_RECIPROCAL:                        \
-      result = hn::Div(hn::Set(d, T(1.0)), in); \
-      break;                                    \
+template <typename T>
+struct OpFloor {
+  HWY_ATTR hn::VFromD<hn::ScalableTag<T>> operator()(
+      hn::VFromD<hn::ScalableTag<T>> a) {
+    return hn::Floor(a);
   }
+};
 
 template <typename T>
+struct OpCeil {
+  HWY_ATTR hn::VFromD<hn::ScalableTag<T>> operator()(
+      hn::VFromD<hn::ScalableTag<T>> a) {
+    return hn::Ceil(a);
+  }
+};
+
+template <typename T>
+struct OpTrunc {
+  HWY_ATTR hn::VFromD<hn::ScalableTag<T>> operator()(
+      hn::VFromD<hn::ScalableTag<T>> a) {
+    return hn::Trunc(a);
+  }
+};
+
+template <typename T>
+struct OpSqrt {
+  HWY_ATTR hn::VFromD<hn::ScalableTag<T>> operator()(
+      hn::VFromD<hn::ScalableTag<T>> a) {
+    return hn::Sqrt(a);
+  }
+};
+
+template <typename T>
+struct OpSquare {
+  HWY_ATTR hn::VFromD<hn::ScalableTag<T>> operator()(
+      hn::VFromD<hn::ScalableTag<T>> a) {
+    return hn::Mul(a, a);
+  }
+};
+
+template <typename T>
+struct OpAbs {
+  HWY_ATTR hn::VFromD<hn::ScalableTag<T>> operator()(
+      hn::VFromD<hn::ScalableTag<T>> a) {
+    return hn::Abs(a);
+  }
+};
+
+template <typename T>
+struct OpReciprocal {
+  hn::ScalableTag<T> d;
+  HWY_ATTR hn::VFromD<hn::ScalableTag<T>> operator()(
+      hn::VFromD<hn::ScalableTag<T>> a) {
+    return hn::Div(hn::Set(d, T(1.0)), a);
+  }
+};
+
+template <typename T, typename OP>
 HWY_ATTR void Super(char** args,
                     npy_intp const* dimensions,
                     npy_intp const* steps,
-                    HWY_OP op,
                     bool IS_RECIP) {
   const T* HWY_RESTRICT input_array = (const T*)args[0];
   T* HWY_RESTRICT output_array = (T*)args[1];
   const size_t size = dimensions[0];
   const hn::ScalableTag<T> d;
+  OP op;
   if (is_mem_overlap(input_array, steps[0], output_array, steps[1], size)) {
     const int lsize = sizeof(input_array[0]);
     const npy_intp ssrc = steps[0] / lsize;
@@ -72,8 +98,7 @@ HWY_ATTR void Super(char** args,
     for (size_t len = size; 0 < len;
          len--, input_array += ssrc, output_array += sdst) {
       const auto in = hn::LoadN(d, input_array, 1);
-      hn::VFromD<hn::ScalableTag<T>> x;
-      FUNC(x, in);
+      auto x = op(in);
       hn::StoreN(x, d, output_array, 1);
     }
   } else if (IS_UNARY_CONT(input_array[0], output_array[0])) {
@@ -83,17 +108,13 @@ HWY_ATTR void Super(char** args,
     for (; len >= wstep;
          len -= wstep, input_array += wstep, output_array += wstep) {
       const auto in0 = hn::LoadU(d, input_array + vstep * 0);
-      hn::VFromD<hn::ScalableTag<T>> x0;
-      FUNC(x0, in0);
+      auto x0 = op(in0);
       const auto in1 = hn::LoadU(d, input_array + vstep * 1);
-      hn::VFromD<hn::ScalableTag<T>> x1;
-      FUNC(x1, in1);
+      auto x1 = op(in1);
       const auto in2 = hn::LoadU(d, input_array + vstep * 2);
-      hn::VFromD<hn::ScalableTag<T>> x2;
-      FUNC(x2, in2);
+      auto x2 = op(in2);
       const auto in3 = hn::LoadU(d, input_array + vstep * 3);
-      hn::VFromD<hn::ScalableTag<T>> x3;
-      FUNC(x3, in3);
+      auto x3 = op(in3);
       hn::StoreU(x0, d, output_array + vstep * 0);
       hn::StoreU(x1, d, output_array + vstep * 1);
       hn::StoreU(x2, d, output_array + vstep * 2);
@@ -102,8 +123,7 @@ HWY_ATTR void Super(char** args,
     for (; len >= vstep;
          len -= vstep, input_array += vstep, output_array += vstep) {
       const auto in = hn::LoadU(d, input_array);
-      hn::VFromD<hn::ScalableTag<T>> x;
-      FUNC(x, in);
+      auto x = op(in);
       hn::StoreU(x, d, output_array);
     }
     if (len) {
@@ -114,8 +134,7 @@ HWY_ATTR void Super(char** args,
       } else {
         in = hn::LoadN(d, input_array, len);
       }
-      hn::VFromD<hn::ScalableTag<T>> x;
-      FUNC(x, in);
+      auto x = op(in);
       hn::StoreN(x, d, output_array, len);
     }
   } else {
@@ -131,8 +150,7 @@ HWY_ATTR void Super(char** args,
     size_t remainder = size - full;
     for (size_t i = 0; i < full; i += hn::Lanes(d)) {
       const auto in = hn::GatherIndex(d, input_array + i * ssrc, load_index);
-      hn::VFromD<hn::ScalableTag<T>> x;
-      FUNC(x, in);
+      auto x = op(in);
       hn::ScatterIndex(x, d, output_array + i * sdst, store_index);
     }
     if (remainder) {
@@ -145,8 +163,7 @@ HWY_ATTR void Super(char** args,
         in = hn::GatherIndexN(d, input_array + full * ssrc, load_index,
                               remainder);
       }
-      hn::VFromD<hn::ScalableTag<T>> x;
-      FUNC(x, in);
+      auto x = op(in);
       hn::ScatterIndexN(x, d, output_array + full * sdst, store_index,
                         remainder);
     }
@@ -157,98 +174,98 @@ extern "C" {
 NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(DOUBLE_rint)
 (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
 {
-  return Super<npy_double>(args, dimensions, steps, HWY_OP::HWY_ROUND, false);
+  return Super<npy_double, OpRound<npy_double>>(args, dimensions, steps, false);
 }
 
 NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(FLOAT_rint)
 (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
 {
-  return Super<npy_float>(args, dimensions, steps, HWY_OP::HWY_ROUND, false);
+  return Super<npy_float, OpRound<npy_float>>(args, dimensions, steps, false);
 }
 
 NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(DOUBLE_floor)
 (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
 {
-  return Super<npy_double>(args, dimensions, steps, HWY_OP::HWY_FLOOR, false);
+  return Super<npy_double, OpFloor<npy_double>>(args, dimensions, steps, false);
 }
 
 NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(FLOAT_floor)
 (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
 {
-  return Super<npy_float>(args, dimensions, steps, HWY_OP::HWY_FLOOR, false);
+  return Super<npy_float, OpFloor<npy_float>>(args, dimensions, steps, false);
 }
 
 NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(DOUBLE_ceil)
 (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
 {
-  return Super<npy_double>(args, dimensions, steps, HWY_OP::HWY_CEIL, false);
+  return Super<npy_double, OpCeil<npy_double>>(args, dimensions, steps, false);
 }
 
 NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(FLOAT_ceil)
 (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
 {
-  return Super<npy_float>(args, dimensions, steps, HWY_OP::HWY_CEIL, false);
+  return Super<npy_float, OpCeil<npy_float>>(args, dimensions, steps, false);
 }
 
 NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(DOUBLE_trunc)
 (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
 {
-  return Super<npy_double>(args, dimensions, steps, HWY_OP::HWY_TRUNC, false);
+  return Super<npy_double, OpTrunc<npy_double>>(args, dimensions, steps, false);
 }
 
 NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(FLOAT_trunc)
 (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
 {
-  return Super<npy_float>(args, dimensions, steps, HWY_OP::HWY_TRUNC, false);
+  return Super<npy_float, OpTrunc<npy_float>>(args, dimensions, steps, false);
 }
 
 NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(DOUBLE_sqrt)
 (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
 {
-  return Super<npy_double>(args, dimensions, steps, HWY_OP::HWY_SQRT, false);
+  return Super<npy_double, OpSqrt<npy_double>>(args, dimensions, steps, false);
 }
 
 NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(FLOAT_sqrt)
 (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
 {
-  return Super<npy_float>(args, dimensions, steps, HWY_OP::HWY_SQRT, false);
+  return Super<npy_float, OpSqrt<npy_float>>(args, dimensions, steps, false);
 }
 
 NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(DOUBLE_square)
 (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
 {
-  return Super<npy_double>(args, dimensions, steps, HWY_OP::HWY_SQUARE, false);
+  return Super<npy_double, OpSquare<npy_double>>(args, dimensions, steps, false);
 }
 
 NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(FLOAT_square)
 (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
 {
-  return Super<npy_float>(args, dimensions, steps, HWY_OP::HWY_SQUARE, false);
+  return Super<npy_float, OpSquare<npy_float>>(args, dimensions, steps, false);
 }
 
 NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(DOUBLE_absolute)
 (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
 {
-  Super<npy_double>(args, dimensions, steps, HWY_OP::HWY_ABS, false);
+  Super<npy_double, OpAbs<npy_double>>(args, dimensions, steps, false);
   npy_clear_floatstatus_barrier((char*)dimensions);
 }
 
 NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(FLOAT_absolute)
 (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
 {
-  Super<npy_float>(args, dimensions, steps, HWY_OP::HWY_ABS, false);
+  Super<npy_float, OpAbs<npy_float>>(args, dimensions, steps, false);
   npy_clear_floatstatus_barrier((char*)dimensions);
 }
 
 NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(DOUBLE_reciprocal)
 (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
 {
-  Super<npy_double>(args, dimensions, steps, HWY_OP::HWY_RECIPROCAL, true);
+  Super<npy_double, OpReciprocal<npy_double>>(args, dimensions, steps, true);
 }
 
 NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(FLOAT_reciprocal)
 (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
 {
-  Super<npy_float>(args, dimensions, steps, HWY_OP::HWY_RECIPROCAL, true);
+  Super<npy_float, OpReciprocal<npy_float>>(args, dimensions, steps, true);
 }
 }
