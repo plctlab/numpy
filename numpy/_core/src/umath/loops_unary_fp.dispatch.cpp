@@ -4,7 +4,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-
+#include <iostream>
 #include "numpy/ndarraytypes.h"
 #include "numpy/npy_common.h"
 #include "numpy/npy_math.h"
@@ -12,6 +12,7 @@
 #include "fast_loop_macros.h"
 #include "loops_utils.h"
 #include <hwy/highway.h>
+#include "hwy/print-inl.h"
 #include <hwy/aligned_allocator.h>
 
 namespace hn = hwy::HWY_NAMESPACE;
@@ -90,6 +91,7 @@ HWY_ATTR void Super(char** args,
   T* HWY_RESTRICT output_array = (T*)args[1];
   const size_t size = dimensions[0];
   const hn::ScalableTag<T> d;
+  auto one = hn::Set(d, 1);
   OP op;
   if (is_mem_overlap(input_array, steps[0], output_array, steps[1], size)) {
     const int lsize = sizeof(input_array[0]);
@@ -97,7 +99,12 @@ HWY_ATTR void Super(char** args,
     const npy_intp sdst = steps[1] / lsize;
     for (size_t len = size; 0 < len;
          len--, input_array += ssrc, output_array += sdst) {
-      const auto in = hn::LoadN(d, input_array, 1);
+      hn::Vec<hn::ScalableTag<T>> in;
+      if (IS_RECIP) {
+        in = hn::LoadNOr(one, d, input_array, 1);
+      } else {
+        in = hn::LoadN(d, input_array, 1);
+      }
       auto x = op(in);
       hn::StoreN(x, d, output_array, 1);
     }
@@ -129,7 +136,6 @@ HWY_ATTR void Super(char** args,
     if (len) {
       hn::Vec<hn::ScalableTag<T>> in;
       if (IS_RECIP) {
-        auto one = hn::Set(d, 1);
         in = hn::LoadNOr(one, d, input_array, len);
       } else {
         in = hn::LoadN(d, input_array, len);
@@ -156,7 +162,6 @@ HWY_ATTR void Super(char** args,
     if (remainder) {
       hn::Vec<hn::ScalableTag<T>> in;
       if (IS_RECIP) {
-        auto one = hn::Set(d, 1);
         in = hn::GatherIndexNOr(one, d, input_array + full * ssrc, load_index,
                                 remainder);
       } else {
