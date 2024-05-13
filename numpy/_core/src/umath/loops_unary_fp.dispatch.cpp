@@ -154,23 +154,49 @@ HWY_ATTR void Super(char** args,
     auto store_index = hn::Mul(hn::Iota(di, 0), hn::Set(di, sdst));
     size_t full = size & -hn::Lanes(d);
     size_t remainder = size - full;
-    for (size_t i = 0; i < full; i += hn::Lanes(d)) {
-      const auto in = hn::GatherIndex(d, input_array + i * ssrc, load_index);
-      auto x = op(in);
-      hn::ScatterIndex(x, d, output_array + i * sdst, store_index);
+    if (sdst == 1 && ssrc != 1) {
+      for (size_t i = 0; i < full; i += hn::Lanes(d)) {
+        const auto in = hn::GatherIndex(d, input_array + i * ssrc, load_index);
+        auto x = op(in);
+        hn::StoreU(x, d, output_array + i);
+      }
+    } else if (sdst != 1 && ssrc == 1) {
+      for (size_t i = 0; i < full; i += hn::Lanes(d)) {
+        const auto in = hn::LoadU(d, input_array + i);
+        auto x = op(in);
+        hn::ScatterIndex(x, d, output_array + i * sdst, store_index);
+      }
+    } else {
+      for (size_t i = 0; i < full; i += hn::Lanes(d)) {
+        const auto in = hn::GatherIndex(d, input_array + i * ssrc, load_index);
+        auto x = op(in);
+        hn::ScatterIndex(x, d, output_array + i * sdst, store_index);
+      }
     }
     if (remainder) {
       hn::Vec<hn::ScalableTag<T>> in;
       if (IS_RECIP) {
-        in = hn::GatherIndexNOr(one, d, input_array + full * ssrc, load_index,
-                                remainder);
+        if (ssrc == 1) {
+          in = hn::LoadNOr(one, d, input_array + full, remainder);
+        } else {
+          in = hn::GatherIndexNOr(one, d, input_array + full * ssrc, load_index,
+                                  remainder);
+        }
       } else {
-        in = hn::GatherIndexN(d, input_array + full * ssrc, load_index,
-                              remainder);
+        if (ssrc == 1) {
+          in = hn::LoadN(d, input_array + full, remainder);
+        } else {
+          in = hn::GatherIndexN(d, input_array + full * ssrc, load_index,
+                                remainder);
+        }
       }
       auto x = op(in);
-      hn::ScatterIndexN(x, d, output_array + full * sdst, store_index,
-                        remainder);
+      if (sdst == 1) {
+        hn::StoreN(x, d, output_array + full, remainder);
+      } else {
+        hn::ScatterIndexN(x, d, output_array + full * sdst, store_index,
+                          remainder);
+      }
     }
   }
 }
