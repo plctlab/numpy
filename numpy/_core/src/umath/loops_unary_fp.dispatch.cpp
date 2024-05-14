@@ -4,7 +4,6 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#include <iostream>
 #include "numpy/ndarraytypes.h"
 #include "numpy/npy_common.h"
 #include "numpy/npy_math.h"
@@ -16,10 +15,10 @@
 #include <hwy/aligned_allocator.h>
 
 namespace hn = hwy::HWY_NAMESPACE;
-
+HWY_BEFORE_NAMESPACE();
 template <typename T>
 struct OpRound {
-  HWY_ATTR hn::VFromD<hn::ScalableTag<T>> operator()(
+  HWY_INLINE hn::VFromD<hn::ScalableTag<T>> operator()(
       hn::VFromD<hn::ScalableTag<T>> a) {
     return hn::Round(a);
   }
@@ -27,7 +26,7 @@ struct OpRound {
 
 template <typename T>
 struct OpFloor {
-  HWY_ATTR hn::VFromD<hn::ScalableTag<T>> operator()(
+  HWY_INLINE hn::VFromD<hn::ScalableTag<T>> operator()(
       hn::VFromD<hn::ScalableTag<T>> a) {
     return hn::Floor(a);
   }
@@ -35,7 +34,7 @@ struct OpFloor {
 
 template <typename T>
 struct OpCeil {
-  HWY_ATTR hn::VFromD<hn::ScalableTag<T>> operator()(
+  HWY_INLINE hn::VFromD<hn::ScalableTag<T>> operator()(
       hn::VFromD<hn::ScalableTag<T>> a) {
     return hn::Ceil(a);
   }
@@ -43,7 +42,7 @@ struct OpCeil {
 
 template <typename T>
 struct OpTrunc {
-  HWY_ATTR hn::VFromD<hn::ScalableTag<T>> operator()(
+  HWY_INLINE hn::VFromD<hn::ScalableTag<T>> operator()(
       hn::VFromD<hn::ScalableTag<T>> a) {
     return hn::Trunc(a);
   }
@@ -51,7 +50,7 @@ struct OpTrunc {
 
 template <typename T>
 struct OpSqrt {
-  HWY_ATTR hn::VFromD<hn::ScalableTag<T>> operator()(
+  HWY_INLINE hn::VFromD<hn::ScalableTag<T>> operator()(
       hn::VFromD<hn::ScalableTag<T>> a) {
     return hn::Sqrt(a);
   }
@@ -59,7 +58,7 @@ struct OpSqrt {
 
 template <typename T>
 struct OpSquare {
-  HWY_ATTR hn::VFromD<hn::ScalableTag<T>> operator()(
+  HWY_INLINE hn::VFromD<hn::ScalableTag<T>> operator()(
       hn::VFromD<hn::ScalableTag<T>> a) {
     return hn::Mul(a, a);
   }
@@ -67,7 +66,7 @@ struct OpSquare {
 
 template <typename T>
 struct OpAbs {
-  HWY_ATTR hn::VFromD<hn::ScalableTag<T>> operator()(
+  HWY_INLINE hn::VFromD<hn::ScalableTag<T>> operator()(
       hn::VFromD<hn::ScalableTag<T>> a) {
     return hn::Abs(a);
   }
@@ -76,14 +75,14 @@ struct OpAbs {
 template <typename T>
 struct OpReciprocal {
   hn::ScalableTag<T> d;
-  HWY_ATTR hn::VFromD<hn::ScalableTag<T>> operator()(
+  HWY_INLINE hn::VFromD<hn::ScalableTag<T>> operator()(
       hn::VFromD<hn::ScalableTag<T>> a) {
     return hn::Div(hn::Set(d, T(1.0)), a);
   }
 };
 
 template <typename T, typename OP>
-HWY_ATTR void Super(char** args,
+HWY_INLINE void Super(char** args,
                     npy_intp const* dimensions,
                     npy_intp const* steps,
                     bool IS_RECIP) {
@@ -201,6 +200,7 @@ HWY_ATTR void Super(char** args,
   }
 }
 
+
 extern "C" {
 NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(DOUBLE_rint)
 (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
@@ -300,3 +300,4 @@ NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(FLOAT_reciprocal)
   Super<npy_float, OpReciprocal<npy_float>>(args, dimensions, steps, true);
 }
 }
+HWY_AFTER_NAMESPACE();
