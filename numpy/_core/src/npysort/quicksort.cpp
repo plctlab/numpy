@@ -81,7 +81,7 @@ inline bool quicksort_dispatch(T *start, npy_intp num)
     void (*dispfunc)(TF*, intptr_t) = nullptr;
     if (sizeof(T) == sizeof(uint16_t)) {
         #ifndef NPY_DISABLE_OPTIMIZATION
-            #if defined(NPY_CPU_AMD64) || defined(NPY_CPU_X86) // x86 32-bit and 64-bit
+            #if 0
                 #include "x86_simd_qsort_16bit.dispatch.h"
                 NPY_CPU_DISPATCH_CALL_XB(dispfunc = np::qsort_simd::template QSort, <TF>);
             #else
@@ -92,7 +92,7 @@ inline bool quicksort_dispatch(T *start, npy_intp num)
     }
     else if (sizeof(T) == sizeof(uint32_t) || sizeof(T) == sizeof(uint64_t)) {
         #ifndef NPY_DISABLE_OPTIMIZATION
-            #if defined(NPY_CPU_AMD64) || defined(NPY_CPU_X86) // x86 32-bit and 64-bit
+            #if 0
                 #include "x86_simd_qsort.dispatch.h"
                 NPY_CPU_DISPATCH_CALL_XB(dispfunc = np::qsort_simd::template QSort, <TF>);
             #else

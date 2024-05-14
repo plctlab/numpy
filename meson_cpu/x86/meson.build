@@ -196,6 +196,7 @@ if compiler_id == 'msvc'
     AVX512_ICL
   ]
     fet.update(args: '')
+  SSE42.update(args: '-DHWY_WANT_SSE4=1')
   endforeach
   # MSVC compiler doesn't support the following features independently
   FMA3.update(implies: [F16C, AVX2])

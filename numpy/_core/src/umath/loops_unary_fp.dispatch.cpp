@@ -43,7 +43,7 @@ struct OpCeil {
 
 template <typename T>
 struct OpTrunc {
-  HWY_ATTR hn::VFromD<hn::ScalableTag<T>> operator()(
+  hn::VFromD<hn::ScalableTag<T>> operator()(
       hn::VFromD<hn::ScalableTag<T>> a) {
     return hn::Trunc(a);
   }
@@ -83,7 +83,7 @@ struct OpReciprocal {
 };
 
 template <typename T, typename OP>
-HWY_ATTR void Super(char** args,
+NPY_NO_EXPORT inline void Super(char** args,
                     npy_intp const* dimensions,
                     npy_intp const* steps,
                     bool IS_RECIP) {
@@ -93,6 +93,7 @@ HWY_ATTR void Super(char** args,
   const hn::ScalableTag<T> d;
   auto one = hn::Set(d, 1);
   OP op;
+  std::cout << HWY_TARGET_STR  << std::endl;
   if (is_mem_overlap(input_array, steps[0], output_array, steps[1], size)) {
     const int lsize = sizeof(input_array[0]);
     const npy_intp ssrc = steps[0] / lsize;
@@ -201,10 +202,14 @@ HWY_ATTR void Super(char** args,
   }
 }
 
+#include "loops_unary_fp.dispatch.h"
+
 extern "C" {
 NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(DOUBLE_rint)
 (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
 {
+  // const char *enabled_targets[] = NPY_CPU_DISPATCH_INFO();
+  // printf("Current dispatched target: %s\n", enabled_targets[0]);
   return Super<npy_double, OpRound<npy_double>>(args, dimensions, steps, false);
 }
 
@@ -241,12 +246,18 @@ NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(FLOAT_ceil)
 NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(DOUBLE_trunc)
 (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
 {
+  const char *enabled_targets[] = NPY_CPU_DISPATCH_INFO();
+  printf("Current dispatched target: %s\n", enabled_targets[0]);
+  std::cout << HWY_TARGET_STR  << std::endl;
   return Super<npy_double, OpTrunc<npy_double>>(args, dimensions, steps, false);
 }
 
 NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(FLOAT_trunc)
 (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func))
 {
+  const char *enabled_targets[] = NPY_CPU_DISPATCH_INFO();
+  printf("Current dispatched target: %s\n", enabled_targets[0]);
+  std::cout << HWY_TARGET_STR  << std::endl;
   return Super<npy_float, OpTrunc<npy_float>>(args, dimensions, steps, false);
 }
 
