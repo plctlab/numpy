@@ -242,7 +242,11 @@ NPY_FINLINE npyv_f64 npyv_loadn_f64(const double *ptr, npy_intp stride)
 
 //// 64-bit load over 32-bit stride
 NPY_FINLINE npyv_u32 npyv_loadn2_u32(const npy_uint32 *ptr, npy_intp stride)
-{ return __riscv_vreinterpret_v_u64m1_u32m1(__riscv_vlse64_v_u64m1((const uint64_t*)ptr, stride * sizeof(uint32_t), npyv_nlanes_u64)); }
+{
+    uint32_t v[npyv_nlanes_u32];
+    __riscv_vsseg2e32(v, __riscv_vlsseg2e32_v_u32mf2x2((const uint32_t*)ptr, stride * sizeof(uint32_t), npyv_nlanes_u32 / 2), npyv_nlanes_u32 / 2);
+    return __riscv_vle32_v_u32m1(v, npyv_nlanes_u32);
+}
 NPY_FINLINE npyv_s32 npyv_loadn2_s32(const npy_int32 *ptr, npy_intp stride)
 { return npyv_reinterpret_s32_u32(npyv_loadn2_u32((const npy_uint32*)ptr, stride)); }
 NPY_FINLINE npyv_f32 npyv_loadn2_f32(const float *ptr, npy_intp stride)
@@ -251,9 +255,9 @@ NPY_FINLINE npyv_f32 npyv_loadn2_f32(const float *ptr, npy_intp stride)
 //// 128-bit load over 64-bit stride
 NPY_FINLINE npyv_u64 npyv_loadn2_u64(const npy_uint64 *ptr, npy_intp stride)
 {
-    vuint64m1_t id = __riscv_vmul(__riscv_vsrl(__riscv_vid_v_u64m1(npyv_nlanes_u64), 1, npyv_nlanes_u64), stride * sizeof(uint64_t), npyv_nlanes_u64);
-    id = __riscv_vadd_vx_u64m1_mu(__riscv_vreinterpret_v_u8m1_b64(__riscv_vmv_v_x_u8m1(0xAA, npyv_nlanes_u8)), id, id, sizeof(uint64_t), npyv_nlanes_u64);
-    return __riscv_vloxei64_v_u64m1((const uint64_t*)ptr, id, npyv_nlanes_u64);
+    uint64_t v[npyv_nlanes_u64];
+    __riscv_vsseg2e64(v, __riscv_vlsseg2e64_v_u64m1x2((const uint64_t*)ptr, stride * sizeof(uint64_t), npyv_nlanes_u64 / 2), npyv_nlanes_u64 / 2);
+    return __riscv_vle64_v_u64m1(v, npyv_nlanes_u64);
 }
 NPY_FINLINE npyv_s64 npyv_loadn2_s64(const npy_int64 *ptr, npy_intp stride)
 { return npyv_reinterpret_s64_u64(npyv_loadn2_u64((const npy_uint64*)ptr, stride)); }
@@ -280,7 +284,11 @@ NPY_FINLINE void npyv_storen_f64(double *ptr, npy_intp stride, npyv_f64 a)
 
 //// 64-bit store over 32-bit stride
 NPY_FINLINE void npyv_storen2_u32(npy_uint32 *ptr, npy_intp stride, npyv_u32 a)
-{ __riscv_vsse64((uint64_t*)ptr, stride * sizeof(uint32_t), __riscv_vreinterpret_v_u32m1_u64m1(a), npyv_nlanes_u64); }
+{
+    uint32_t v[npyv_nlanes_u32];
+    __riscv_vse32(v, a, npyv_nlanes_u32);
+    __riscv_vssseg2e32((uint32_t*)ptr, stride * sizeof(uint32_t), __riscv_vlseg2e32_v_u32mf2x2(v, npyv_nlanes_u32 / 2), npyv_nlanes_u32 / 2);
+}
 NPY_FINLINE void npyv_storen2_s32(npy_int32 *ptr, npy_intp stride, npyv_s32 a)
 { npyv_storen2_u32((npy_uint32*)ptr, stride, npyv_reinterpret_u32_s32(a)); }
 NPY_FINLINE void npyv_storen2_f32(float *ptr, npy_intp stride, npyv_f32 a)
@@ -289,9 +297,9 @@ NPY_FINLINE void npyv_storen2_f32(float *ptr, npy_intp stride, npyv_f32 a)
 //// 128-bit store over 64-bit stride
 NPY_FINLINE void npyv_storen2_u64(npy_uint64 *ptr, npy_intp stride, npyv_u64 a)
 {
-    vuint64m1_t id = __riscv_vmul(__riscv_vsrl(__riscv_vid_v_u64m1(npyv_nlanes_u64), 1, npyv_nlanes_u64), stride * sizeof(uint64_t), npyv_nlanes_u64);
-    id = __riscv_vadd_vx_u64m1_mu(__riscv_vreinterpret_v_u8m1_b64(__riscv_vmv_v_x_u8m1(0xAA, npyv_nlanes_u8)), id, id, sizeof(uint64_t), npyv_nlanes_u64);
-    __riscv_vsoxei64((uint64_t*)ptr, id, a, npyv_nlanes_u64);
+    uint64_t v[npyv_nlanes_u64];
+    __riscv_vse64(v, a, npyv_nlanes_u64);
+    __riscv_vssseg2e64((uint64_t*)ptr, stride * sizeof(uint64_t), __riscv_vlseg2e64_v_u64m1x2(v, npyv_nlanes_u64 / 2), npyv_nlanes_u64 / 2);
 }
 NPY_FINLINE void npyv_storen2_s64(npy_int64 *ptr, npy_intp stride, npyv_s64 a)
 { npyv_storen2_u64((npy_uint64*)ptr, stride, npyv_reinterpret_u64_s64(a)); }
@@ -317,10 +325,13 @@ NPY_FINLINE npyv_s64 npyv_load_tillz_s64(const npy_int64 *ptr, npy_uintp nlane)
 //// 64-bit nlane
 NPY_FINLINE npyv_s32 npyv_load2_till_s32(const npy_int32 *ptr, npy_uintp nlane,
                                           npy_int32 fill_lo, npy_int32 fill_hi)
-{ return __riscv_vreinterpret_v_i64m1_i32m1(npyv_load_till_s64((const npy_int64*)ptr, nlane, (uint64_t)fill_hi << 32 | fill_lo)); }
+{
+    const vint32m1_t fill = __riscv_vreinterpret_i32m1(__riscv_vmv_v_x_i64m1((int64_t)fill_hi << 32 | fill_lo, npyv_nlanes_s64));
+    return __riscv_vle32_v_i32m1_tu(fill, (const int32_t*)ptr, nlane * 2);
+}
 // fill zero to rest lanes
 NPY_FINLINE npyv_s32 npyv_load2_tillz_s32(const npy_int32 *ptr, npy_uintp nlane)
-{ return __riscv_vreinterpret_v_i64m1_i32m1(npyv_load_tillz_s64((const npy_int64*)ptr, nlane)); }
+{ return npyv_load_tillz_s32(ptr, nlane * 2); }
 
 //// 128-bit nlane
 NPY_FINLINE npyv_s64 npyv_load2_till_s64(const npy_int64 *ptr, npy_uintp nlane,
@@ -330,7 +341,7 @@ NPY_FINLINE npyv_s64 npyv_load2_till_s64(const npy_int64 *ptr, npy_uintp nlane,
     return __riscv_vle64_v_i64m1_tu(fill, (const int64_t*)ptr, nlane * 2);
 }
 NPY_FINLINE npyv_s64 npyv_load2_tillz_s64(const npy_int64 *ptr, npy_uintp nlane)
-{ return __riscv_vle64_v_i64m1_tu(__riscv_vmv_v_x_i64m1(0, npyv_nlanes_s64), (const int64_t*)ptr, nlane * 2); }
+{ return npyv_load_tillz_s64(ptr, nlane * 2); }
 
 /*********************************
  * Non-contiguous partial load
@@ -349,7 +360,17 @@ NPY_FINLINE npyv_s64 npyv_loadn_tillz_s64(const npy_int64 *ptr, npy_intp stride,
 //// 64-bit load over 32-bit stride
 NPY_FINLINE npyv_s32 npyv_loadn2_till_s32(const npy_int32 *ptr, npy_intp stride, npy_uintp nlane,
                                                  npy_int32 fill_lo, npy_int32 fill_hi)
-{ return __riscv_vreinterpret_v_i64m1_i32m1(__riscv_vlse64_v_i64m1_tu(__riscv_vmv_v_x_i64m1((uint64_t)fill_hi << 32 | fill_lo, npyv_nlanes_s64), (const int64_t*)ptr, stride * sizeof(int32_t), nlane)); }
+{
+#if npyv_nlanes_s32 == 4
+    int32_t v[npyv_nlanes_s32] = { fill_lo, fill_hi, fill_lo, fill_hi };
+#elif npyv_nlanes_s32 == 8
+    int32_t v[npyv_nlanes_s32] = { fill_lo, fill_hi, fill_lo, fill_hi, fill_lo, fill_hi, fill_lo, fill_hi };
+#elif npyv_nlanes_s32 == 16
+    int32_t v[npyv_nlanes_s32] = { fill_lo, fill_hi, fill_lo, fill_hi, fill_lo, fill_hi, fill_lo, fill_hi, fill_lo, fill_hi, fill_lo, fill_hi, fill_lo, fill_hi, fill_lo, fill_hi };
+#endif
+    __riscv_vsseg2e32(v, __riscv_vlsseg2e32_v_i32mf2x2((const int32_t*)ptr, stride * sizeof(int32_t), nlane), nlane);
+    return __riscv_vle32_v_i32m1(v, npyv_nlanes_s32);
+}
 NPY_FINLINE npyv_s32 npyv_loadn2_tillz_s32(const npy_int32 *ptr, npy_intp stride, npy_uintp nlane)
 { return npyv_loadn2_till_s32(ptr, stride, nlane, 0, 0); }
 
@@ -357,11 +378,16 @@ NPY_FINLINE npyv_s32 npyv_loadn2_tillz_s32(const npy_int32 *ptr, npy_intp stride
 NPY_FINLINE npyv_s64 npyv_loadn2_till_s64(const npy_int64 *ptr, npy_intp stride, npy_uintp nlane,
                                           npy_int64 fill_lo, npy_int64 fill_hi)
 {
-    vbool64_t mask = __riscv_vreinterpret_v_u8m1_b64(__riscv_vmv_v_x_u8m1(0xAA, npyv_nlanes_u8));
-    vint64m1_t fill = __riscv_vmerge(__riscv_vmv_v_x_i64m1(fill_lo, npyv_nlanes_s64), fill_hi, mask, npyv_nlanes_s64);
-    vuint64m1_t id = __riscv_vmul(__riscv_vsrl(__riscv_vid_v_u64m1(npyv_nlanes_u64), 1, npyv_nlanes_u64), stride * sizeof(uint64_t), npyv_nlanes_u64);
-    id = __riscv_vadd_vx_u64m1_mu(mask, id, id, sizeof(uint64_t), npyv_nlanes_u64);
-    return __riscv_vloxei64_v_i64m1_tu(fill, (const int64_t*)ptr, id, nlane * 2);
+#if npyv_nlanes_s64 == 4
+    int64_t v[npyv_nlanes_s64] = { fill_lo, fill_hi, fill_lo, fill_hi };
+#elif npyv_nlanes_s64 == 8
+    int64_t v[npyv_nlanes_s64] = { fill_lo, fill_hi, fill_lo, fill_hi, fill_lo, fill_hi, fill_lo, fill_hi };
+#elif npyv_nlanes_s64 == 16
+    int64_t v[npyv_nlanes_s64] = { fill_lo, fill_hi, fill_lo, fill_hi, fill_lo, fill_hi, fill_lo, fill_hi, fill_lo, fill_hi, fill_lo, fill_hi, fill_lo, fill_hi, fill_lo, fill_hi };
+#endif
+    nlane = nlane < npyv_nlanes_s64 / 2 ? nlane : npyv_nlanes_s64 / 2;
+    __riscv_vsseg2e64(v, __riscv_vlsseg2e64_v_i64m1x2((const int64_t*)ptr, stride * sizeof(int64_t), nlane), nlane);
+    return __riscv_vle64_v_i64m1(v, npyv_nlanes_s64);
 }
 NPY_FINLINE npyv_s64 npyv_loadn2_tillz_s64(const npy_int64 *ptr, npy_intp stride, npy_uintp nlane)
 { return npyv_loadn2_till_s64(ptr, stride, nlane, 0, 0); }
@@ -379,11 +405,11 @@ NPY_FINLINE void npyv_store_till_s64(npy_int64 *ptr, npy_uintp nlane, npyv_s64 a
 
 //// 64-bit nlane
 NPY_FINLINE void npyv_store2_till_s32(npy_int32 *ptr, npy_uintp nlane, npyv_s32 a)
-{ npyv_store_till_s64((npy_int64*)ptr, nlane, npyv_reinterpret_s64_s32(a)); }
+{ npyv_store_till_s32(ptr, nlane * 2, a); }
 
 //// 128-bit nlane
 NPY_FINLINE void npyv_store2_till_s64(npy_int64 *ptr, npy_uintp nlane, npyv_s64 a)
-{ npyv_store_till_s64((npy_int64*)ptr, nlane * 2, a); }
+{ npyv_store_till_s64(ptr, nlane * 2, a); }
 
 /*********************************
  * Non-contiguous partial store
@@ -398,14 +424,19 @@ NPY_FINLINE void npyv_storen_till_s64(npy_int64 *ptr, npy_intp stride, npy_uintp
 
 //// 64-bit store over 32-bit stride
 NPY_FINLINE void npyv_storen2_till_s32(npy_int32 *ptr, npy_intp stride, npy_uintp nlane, npyv_s32 a)
-{ __riscv_vsse64((int64_t*)ptr, stride * sizeof(int32_t), __riscv_vreinterpret_v_i32m1_i64m1(a), nlane); }
+{
+    int32_t v[npyv_nlanes_s32];
+    __riscv_vse32(v, a, npyv_nlanes_s32);
+    __riscv_vssseg2e32((int32_t*)ptr, stride * sizeof(int32_t), __riscv_vlseg2e32_v_i32mf2x2(v, nlane), nlane);
+}
 
 //// 128-bit store over 64-bit stride
 NPY_FINLINE void npyv_storen2_till_s64(npy_int64 *ptr, npy_intp stride, npy_uintp nlane, npyv_s64 a)
 {
-    vuint64m1_t id = __riscv_vmul(__riscv_vsrl(__riscv_vid_v_u64m1(npyv_nlanes_u64), 1, npyv_nlanes_u64), stride * sizeof(uint64_t), npyv_nlanes_u64);
-    id = __riscv_vadd_vx_u64m1_mu(__riscv_vreinterpret_v_u8m1_b64(__riscv_vmv_v_x_u8m1(0xAA, npyv_nlanes_u8)), id, id, sizeof(uint64_t), npyv_nlanes_u64);
-    __riscv_vsoxei64((int64_t*)ptr, id, a, nlane * 2);
+    int64_t v[npyv_nlanes_s64];
+    nlane = nlane < npyv_nlanes_s64 / 2 ? nlane : npyv_nlanes_s64 / 2;
+    __riscv_vse64(v, a, npyv_nlanes_s64);
+    __riscv_vssseg2e64((int64_t*)ptr, stride * sizeof(int64_t), __riscv_vlseg2e64_v_i64m1x2(v, nlane), nlane);
 }
 
 /*****************************************************************
