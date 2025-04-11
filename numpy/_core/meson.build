@@ -103,6 +103,10 @@ if host_machine.cpu_family() == 'loongarch64'
   add_project_arguments(['-DHWY_COMPILE_ONLY_SCALAR'], language: ['cpp'])
 endif
 
+if host_machine.cpu_family() == 'riscv64'
+  add_project_arguments('-march=rv64gcv_zvl256b', '-mrvv-vector-bits=256', language: ['c','cpp'])
+endif
+
 use_highway = not get_option('disable-highway')
 if use_highway and not fs.exists('src/highway/README.md')
   error('Missing the `highway` git submodule! Run `git submodule update --init` to fix this.')
@@ -750,6 +754,7 @@ _umath_tests_mtargets = mod_features.multi_targets(
     ASIMDHP, ASIMD, NEON,
     VSX3, VSX2, VSX,
     VXE, VX,
+    RVV,
   ],
   baseline: CPU_BASELINE,
   prefix: 'NPY_',
@@ -794,7 +799,8 @@ foreach gen_mtargets : [
       AVX512_SKX, AVX2, XOP, SSE42, SSE2,
       VSX2,
       ASIMD, NEON,
-      VXE, VX
+      VXE, VX,
+      RVV,
     ]
   ],
 ]
@@ -897,6 +903,7 @@ foreach gen_mtargets : [
       VSX3, VSX2,
       VXE, VX,
       LSX,
+      RVV,
     ]
   ],
   [
@@ -908,6 +915,7 @@ foreach gen_mtargets : [
       VSX4, VSX2,
       VX,
       LSX,
+      RVV,
     ]
   ],
   [
@@ -919,6 +927,7 @@ foreach gen_mtargets : [
       NEON,
       VXE, VX,
       LSX,
+      RVV,
     ]
   ],
   [
@@ -937,6 +946,7 @@ foreach gen_mtargets : [
       NEON_VFPV4,
       VXE,
       LSX,
+      RVV,
     ]
   ],
   [
@@ -960,6 +970,7 @@ foreach gen_mtargets : [
       VSX2,
       VXE, VX,
       LSX,
+      RVV,
     ]
   ],
   [
@@ -978,6 +989,7 @@ foreach gen_mtargets : [
       NEON_VFPV4,
       VXE2, VXE,
       LSX,
+      RVV,
     ]
   ],
   [
@@ -994,6 +1006,7 @@ foreach gen_mtargets : [
       VSX2,
       VXE, VX,
       LSX,
+      RVV,
     ]
   ],
   [
@@ -1005,6 +1018,7 @@ foreach gen_mtargets : [
       ASIMD, NEON,
       VXE, VX,
       LSX,
+      RVV,
     ]
   ],
   [
@@ -1015,6 +1029,7 @@ foreach gen_mtargets : [
       VSX2,
       ASIMD, NEON,
       LSX,
+      RVV,
     ]
   ],
   [
@@ -1026,6 +1041,7 @@ foreach gen_mtargets : [
       VSX3, VSX2,
       VXE, VX,
       LSX,
+      RVV,
     ]
   ],
   [
@@ -1037,6 +1053,7 @@ foreach gen_mtargets : [
       VSX2,
       VX,
       LSX,
+      RVV,
     ]
   ],
 ]
