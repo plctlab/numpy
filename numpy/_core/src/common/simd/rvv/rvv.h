@@ -2,9 +2,13 @@
     #error "Not a standalone header"
 #endif
 
-#define NPY_SIMD 128
-#define NPY_SIMD_WIDTH 16
-#define NPY_SIMD_F32 0
+#include <riscv_vector.h>
+
+// supports VLEN 128, 256 and 512
+// it is impossible to implement npyv_tobits_b8 when VLEN>512
+#define NPY_SIMD __riscv_v_fixed_vlen
+#define NPY_SIMD_WIDTH (__riscv_v_fixed_vlen / 8)
+#define NPY_SIMD_F32 1
 #define NPY_SIMD_F64 1
 
 #ifdef NPY_HAVE_FMA3
@@ -35,12 +39,14 @@ typedef vfloat64m1_t fixed_vfloat64m1_t __attribute__((riscv_rvv_vector_bits(__r
 #define npyv_s16 fixed_vint16m1_t
 #define npyv_s32 fixed_vint32m1_t
 #define npyv_s64 fixed_vint64m1_t
+#define npyv_f32 fixed_vfloat32m1_t
+#define npyv_f64 fixed_vfloat64m1_t
+
+// simulate bool as uint due to gcc/clang bugs, change to fixed_vbool if possible
 #define npyv_b8 fixed_vuint8m1_t
 #define npyv_b16 fixed_vuint16m1_t
 #define npyv_b32 fixed_vuint32m1_t
 #define npyv_b64 fixed_vuint64m1_t
-#define npyv_f32 fixed_vfloat32m1_t
-#define npyv_f64 fixed_vfloat64m1_t
 
 
 typedef struct { fixed_vuint8m1_t val[2]; } npyv_u8x2;
@@ -66,16 +72,30 @@ typedef struct { fixed_vint64m1_t val[3]; } npyv_s64x3;
 typedef struct { fixed_vfloat32m1_t val[3]; } npyv_f32x3;
 typedef struct { fixed_vfloat64m1_t val[3]; } npyv_f64x3;
 
-#define npyv_nlanes_u8  16
-#define npyv_nlanes_s8  16
-#define npyv_nlanes_u16 8
-#define npyv_nlanes_s16 8
-#define npyv_nlanes_u32 4
-#define npyv_nlanes_s32 4
-#define npyv_nlanes_u64 2
-#define npyv_nlanes_s64 2
-#define npyv_nlanes_f32 4
-#define npyv_nlanes_f64 2
+
+// helper types
+#define npyv__u8x2 vuint8m1x2_t
+#define npyv__u16x2 vuint16m1x2_t
+#define npyv__u32x2 vuint32m1x2_t
+#define npyv__u64x2 vuint64m1x2_t
+#define npyv__s8x2 vint8m1x2_t
+#define npyv__s16x2 vint16m1x2_t
+#define npyv__s32x2 vint32m1x2_t
+#define npyv__s64x2 vint64m1x2_t
+#define npyv__f32x2 vfloat32m1x2_t
+#define npyv__f64x2 vfloat64m1x2_t
+
+
+#define npyv_nlanes_u8  32
+#define npyv_nlanes_s8  32
+#define npyv_nlanes_u16 16
+#define npyv_nlanes_s16 16
+#define npyv_nlanes_u32 8
+#define npyv_nlanes_s32 8
+#define npyv_nlanes_u64 4
+#define npyv_nlanes_s64 4
+#define npyv_nlanes_f32 8
+#define npyv_nlanes_f64 4
 
 #include "memory.h"
 #include "misc.h"

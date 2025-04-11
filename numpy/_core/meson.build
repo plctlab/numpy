@@ -104,7 +104,7 @@ if host_machine.cpu_family() == 'loongarch64'
 endif
 
 if host_machine.cpu_family() == 'riscv64'
-  add_project_arguments('-march=rv64gcv_zvl128b', '-mrvv-vector-bits=zvl', language: ['c','cpp'])
+  add_project_arguments('-march=rv64gcv_zvl256b', '-mrvv-vector-bits=256', language: ['c','cpp'])
 endif
 
 use_highway = not get_option('disable-highway')
@@ -946,6 +946,7 @@ foreach gen_mtargets : [
       NEON_VFPV4,
       VXE,
       LSX,
+      RVV,
     ]
   ],
   [
