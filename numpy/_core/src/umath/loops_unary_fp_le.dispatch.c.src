@@ -313,7 +313,7 @@ npyv_pack_isfinite_f64(npyv_f64 v0, npyv_f64 v1, npyv_f64 v2, npyv_f64 v3,
 NPY_FINLINE npyv_u32
 npyv_signbit_f32(npyv_f32 v)
 {
-    return npyv_shri_u32(npyv_reinterpret_u32_f32(v), (sizeof(npyv_lanetype_f32)*8)-1);
+    return npyv_reinterpret_u32_s32(npyv_shri_s32(npyv_reinterpret_s32_f32(v), (sizeof(npyv_lanetype_f32)*8)-1));
 }
 NPY_FINLINE npyv_u8
 npyv_pack_signbit_f32(npyv_f32 v0, npyv_f32 v1, npyv_f32 v2, npyv_f32 v3)
@@ -345,7 +345,7 @@ npyv_pack_signbit_f32(npyv_f32 v0, npyv_f32 v1, npyv_f32 v2, npyv_f32 v3)
 NPY_FINLINE npyv_u64
 npyv_signbit_f64(npyv_f64 v)
 {
-    return npyv_shri_u64(npyv_reinterpret_u64_f64(v), (sizeof(npyv_lanetype_f64)*8)-1);
+    return npyv_reinterpret_u64_s64(npyv_shri_s64(npyv_reinterpret_s64_f64(v), (sizeof(npyv_lanetype_f64)*8)-1));
 }
 NPY_FINLINE npyv_u8
 npyv_pack_signbit_f64(npyv_f64 v0, npyv_f64 v1, npyv_f64 v2, npyv_f64 v3,
@@ -486,9 +486,25 @@ static void simd_unary_@kind@_@TYPE@_@STYPE@_@DTYPE@
 
         op[0 * ostride] = lane[0 * sizeof(npyv_lanetype_@sfx@)];
         op[1 * ostride] = lane[1 * sizeof(npyv_lanetype_@sfx@)];
-        #if npyv_nlanes_@sfx@ == 4
+        #if npyv_nlanes_@sfx@ >= 4
         op[2 * ostride] = lane[2 * sizeof(npyv_lanetype_@sfx@)];
         op[3 * ostride] = lane[3 * sizeof(npyv_lanetype_@sfx@)];
+        #endif
+        #if npyv_nlanes_@sfx@ >= 8
+        op[4 * ostride] = lane[4 * sizeof(npyv_lanetype_@sfx@)];
+        op[5 * ostride] = lane[5 * sizeof(npyv_lanetype_@sfx@)];
+        op[6 * ostride] = lane[6 * sizeof(npyv_lanetype_@sfx@)];
+        op[7 * ostride] = lane[7 * sizeof(npyv_lanetype_@sfx@)];
+        #endif
+        #if npyv_nlanes_@sfx@ >= 16
+        op[ 8 * ostride] = lane[ 8 * sizeof(npyv_lanetype_@sfx@)];
+        op[ 9 * ostride] = lane[ 9 * sizeof(npyv_lanetype_@sfx@)];
+        op[10 * ostride] = lane[10 * sizeof(npyv_lanetype_@sfx@)];
+        op[11 * ostride] = lane[11 * sizeof(npyv_lanetype_@sfx@)];
+        op[12 * ostride] = lane[12 * sizeof(npyv_lanetype_@sfx@)];
+        op[13 * ostride] = lane[13 * sizeof(npyv_lanetype_@sfx@)];
+        op[14 * ostride] = lane[14 * sizeof(npyv_lanetype_@sfx@)];
+        op[15 * ostride] = lane[15 * sizeof(npyv_lanetype_@sfx@)];
         #endif
     }
 
