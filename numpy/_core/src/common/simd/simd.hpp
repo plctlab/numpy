@@ -10,7 +10,7 @@
  */
 /**
  * Since `NPY_SIMD` is only limited to NumPy C universal intrinsics,
- * `NPY_SIMDX` is defined to indicate the SIMD availability for Google's Highway
+ * `NPY_HWY` is defined to indicate the SIMD availability for Google's Highway
  * C++ code.
  *
  * Highway SIMD is only available when optimization is enabled.
@@ -22,38 +22,44 @@
 
 /**
  * We avoid using Highway scalar operations for the following reasons:
- * 1. We already provide kernels for scalar operations, so falling back to
- *    the NumPy implementation is more appropriate. Compilers can often
- *    optimize these better since they rely on standard libraries.
- * 2. Not all Highway intrinsics are fully supported in scalar mode.
  *
- * Therefore, we only enable SIMD when the Highway target is not scalar.
+ * 1. NumPy already provides optimized kernels for scalar operations. Using these
+ *    existing implementations is more consistent with NumPy's architecture and
+ *    allows for compiler optimizations specific to standard library calls.
+ *
+ * 2. Not all Highway intrinsics are fully supported in scalar mode, which could
+ *    lead to compilation errors or unexpected behavior for certain operations.
+ *
+ * 3. For NumPy's strict IEEE 754 floating-point compliance requirements, direct scalar
+ *    implementations offer more predictable behavior than EMU128.
+ *
+ * Therefore, we only enable Highway SIMD when targeting actual SIMD instruction sets.
  */
-#define NPY_SIMDX (HWY_TARGET != HWY_SCALAR)
+#define NPY_HWY ((HWY_TARGET != HWY_SCALAR) && (HWY_TARGET != HWY_EMU128))
 
 // Indicates if the SIMD operations are available for float16.
-#define NPY_SIMDX_F16 (NPY_SIMDX && HWY_HAVE_FLOAT16)
+#define NPY_HWY_F16 (NPY_HWY && HWY_HAVE_FLOAT16)
 // Note: Highway requires SIMD extentions with native float32 support, so we don't need
 // to check for it.
 
 // Indicates if the SIMD operations are available for float64.
-#define NPY_SIMDX_F64 (NPY_SIMDX && HWY_HAVE_FLOAT64)
+#define NPY_HWY_F64 (NPY_HWY && HWY_HAVE_FLOAT64)
 
 // Indicates if the SIMD floating operations are natively supports fma.
-#define NPY_SIMDX_FMA (NPY_SIMDX && HWY_NATIVE_FMA)
+#define NPY_HWY_FMA (NPY_HWY && HWY_NATIVE_FMA)
 
 #else
-#define NPY_SIMDX 0
-#define NPY_SIMDX_F16 0
-#define NPY_SIMDX_F64 0
-#define NPY_SIMDX_FMA 0
+#define NPY_HWY 0
+#define NPY_HWY_F16 0
+#define NPY_HWY_F64 0
+#define NPY_HWY_FMA 0
 #endif
 
 namespace np {
 
 /// Represents the max SIMD width supported by the platform.
 namespace simd {
-#if NPY_SIMDX
+#if NPY_HWY
 /// The highway namespace alias.
 /// We can not import all the symbols from the HWY_NAMESPACE because it will
 /// conflict with the existing symbols in the numpy namespace.
@@ -67,7 +73,7 @@ using _Tag = hn::ScalableTag<TLane>;
 
 /// Represents the 128-bit SIMD width.
 namespace simd128 {
-#if NPY_SIMDX
+#if NPY_HWY
 namespace hn = hwy::HWY_NAMESPACE;
 template <typename TLane>
 using _Tag = hn::Full128<TLane>;
