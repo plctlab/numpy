@@ -10,8 +10,7 @@ NOTE: Many of the methods of ndarray have corresponding functions.
 """
 
 from numpy._core.function_base import add_newdoc
-from numpy._core.overrides import get_array_function_like_doc
-
+from numpy._core.overrides import get_array_function_like_doc  # noqa: F401
 
 ###############################################################################
 #
@@ -5945,7 +5944,7 @@ add_newdoc('numpy._core.multiarray', 'dtype', ('fields',
     >>> import numpy as np
     >>> dt = np.dtype([('name', np.str_, 16), ('grades', np.float64, (2,))])
     >>> print(dt.fields)
-    {'name': (dtype('|S16'), 0), 'grades': (dtype(('float64',(2,))), 16)}
+    {'name': (dtype('<U16'), 0), 'grades': (dtype(('<f8', (2,))), 64)}
 
     """))
 

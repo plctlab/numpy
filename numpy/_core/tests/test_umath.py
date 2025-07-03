@@ -1,24 +1,37 @@
-import platform
-import warnings
 import fnmatch
 import itertools
-import pytest
-import sys
 import operator
+import platform
+import sys
+import warnings
+from collections import namedtuple
 from fractions import Fraction
 from functools import reduce
-from collections import namedtuple
 
+import pytest
+
+import numpy as np
 import numpy._core.umath as ncu
 from numpy._core import _umath_tests as ncu_tests, sctypes
-import numpy as np
 from numpy.testing import (
-    assert_, assert_equal, assert_raises, assert_raises_regex,
-    assert_array_equal, assert_almost_equal, assert_array_almost_equal,
-    assert_array_max_ulp, assert_allclose, assert_no_warnings, suppress_warnings,
-    _gen_alignment_data, assert_array_almost_equal_nulp, IS_WASM, IS_MUSL,
-    IS_PYPY, HAS_REFCOUNT
-    )
+    HAS_REFCOUNT,
+    IS_MUSL,
+    IS_PYPY,
+    IS_WASM,
+    _gen_alignment_data,
+    assert_,
+    assert_allclose,
+    assert_almost_equal,
+    assert_array_almost_equal,
+    assert_array_almost_equal_nulp,
+    assert_array_equal,
+    assert_array_max_ulp,
+    assert_equal,
+    assert_no_warnings,
+    assert_raises,
+    assert_raises_regex,
+    suppress_warnings,
+)
 from numpy.testing._private.utils import _glibc_older_than
 
 UFUNCS = [obj for obj in np._core.umath.__dict__.values()
@@ -1865,8 +1878,15 @@ class TestSpecialFloats:
         # FIXME: NAN raises FP invalid exception:
         #  - ceil/float16 on MSVC:32-bit
         #  - spacing/float16 on almost all platforms
+        #  - spacing/float32,float64 on Windows MSVC with VS2022
         if ufunc in (np.spacing, np.ceil) and dtype == 'e':
             return
+        # Skip spacing tests with NaN on Windows MSVC (all dtypes)
+        import platform
+        if (ufunc == np.spacing and
+            platform.system() == 'Windows' and
+            any(np.isnan(d) if isinstance(d, (int, float)) else False for d in data)):
+            pytest.skip("spacing with NaN generates warnings on Windows/VS2022")
         array = np.array(data, dtype=dtype)
         with assert_no_warnings():
             ufunc(array)
@@ -4897,3 +4917,12 @@ class TestAdd_newdoc_ufunc:
     @pytest.mark.filterwarnings("ignore:_add_newdoc_ufunc:DeprecationWarning")
     def test_string_arg(self):
         assert_raises(TypeError, ncu._add_newdoc_ufunc, np.add, 3)
+
+class TestHypotErrorMessages:
+    def test_hypot_error_message_single_arg(self):
+        with pytest.raises(TypeError, match="hypot\\(\\) takes .* but 1 was given"):
+            np.hypot(5)
+
+    def test_hypot_error_message_multiple_args(self):
+        with pytest.raises(TypeError, match="hypot\\(\\) takes .* but 4 were given"):
+            np.hypot(1, 2, 3, 4)
